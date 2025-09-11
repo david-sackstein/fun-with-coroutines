@@ -1,0 +1,68 @@
+# --------------------
+# CLion
+# --------------------
+.idea/
+*.iml
+
+# --------------------
+# Cursor — keep rules; ignore local task memory
+# --------------------
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+
+# --------------------
+# CMake
+# --------------------
+/build/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/CTestTestfile.cmake
+/Samples/build/
+/Samples/cmake-build-*/
+/Samples/CMakeFiles/
+/Samples/CMakeCache.txt
+/Samples/cmake_install.cmake
+/Samples/CTestTestfile.cmake
+/Samples/Testing/
+
+# Ninja build files
+/build.ninja
+/.ninja_deps
+/.ninja_log
+/Samples/build.ninja
+/Samples/.ninja_deps
+/Samples/.ninja_log
+
+# --------------------
+# Compiled output
+# --------------------
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+
+# --------------------
+# Logs & temp
+# --------------------
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# --------------------
+# Office temp files
+# --------------------
+~$*

@@ -1,0 +1,29 @@
+---
+description: Core conventions for the fun-with-coroutines training repo
+alwaysApply: true
+---
+
+# fun-with-coroutines
+
+Only implement what is required to fulfill the request.
+
+## Header order
+
+1. Project headers first, C++ library headers next, system headers last. A blank line between each group.
+2. Alphabetical order within each group.
+
+## Clang-tidy
+
+1. Always run clang-tidy.
+2. Use `const` everywhere possible — clang-tidy does not always catch missing const.
+
+## Class method order
+
+1. **Visibility:** public methods first, then private methods.
+2. **Caller before callee:** within each visibility group, declare and define methods in caller-callee order (a caller appears before the methods it calls).
+3. **Match declaration and definition:** the order of methods in the `.h` class declaration must be the same as the order of method definitions in the `.cpp` implementation file.
+4. **File order:** when a method’s body calls others in the same class, those callees follow the order they are invoked in that caller’s definition (consistent with rule 2).
+
+## Namespaces
+
+Never comment the closing brace of a namespace (write `}`, not `} // namespace foo`).
