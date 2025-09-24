@@ -3,38 +3,29 @@
 #include "AsyncTask.h"
 
 #include <iostream>
-#include <memory>
-#include <csignal>
-#include <unistd.h>
-#include <cstring>
 
 using namespace std::chrono_literals;
 
 CoroutineObject my_task(EventLoop &loop) {
-    std::cout << "Step 1\n";
+    EventLoop::Work guard(loop);
+
+    std::cout << "From thread " << std::this_thread::get_id() << std::endl;
+
+    std::cout << "Step 1" << std::endl;
     co_await AsyncTask{loop};
 
-    std::cout << "Step 2\n";
+    std::cout << "From thread " << std::this_thread::get_id() << std::endl;
+
+    std::cout << "Step 2" << std::endl;
     co_await AsyncTask{loop};
 
-    std::cout << "Step 3\n";
+    std::cout << "From thread " << std::this_thread::get_id() << std::endl;
 
-    loop.post_stop(EventLoop::StopMode::Immediate);
-}
-
-void handle_sigint(int) {
-    // Use signal-safe write() instead of std::cout
-    const char* msg = "Caught SIGINT\n";
-    write(STDOUT_FILENO, msg, strlen(msg));
-    g_loop.stop_now();
+    std::cout << "Step 3" << std::endl;
+    co_return;
 }
 
 void run_async_tasks_in_event_loop() {
-    // Set signal handler
-    std::signal(SIGINT, handle_sigint);
-
-    // Work guard keeps loop alive
-    EventLoop::Work guard(g_loop);
 
     auto t = my_task(g_loop);
 

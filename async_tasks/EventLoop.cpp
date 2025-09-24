@@ -1,9 +1,9 @@
 #include "EventLoop.h"
+#include <iostream>
 
 EventLoop g_loop{};
 
 EventLoop::EventLoop() :
-    stop_mode(StopMode::None),
     outstanding_work(0) {}
 
 void EventLoop::post(std::function<void()> task) {
@@ -32,14 +32,10 @@ void EventLoop::run() {
 
     while (true) {
         cv.wait(lock, [&] {
-            return stop_mode != StopMode::None || ! tasks.empty() || outstanding_work > 1;
+            return ! tasks.empty() || outstanding_work == 0;
         });
 
-        if (stop_mode == StopMode::Immediate) {
-            break;
-        }
-
-        if (stop_mode == StopMode::Graceful && outstanding_work == 0) {
+        if (outstanding_work == 0) {
             break;
         }
 
@@ -47,17 +43,6 @@ void EventLoop::run() {
             invoke_task(lock);
         }
     }
-}
-
-void EventLoop::stop_now() {
-    stop(StopMode::Immediate);
-}
-
-void EventLoop::post_stop(StopMode stopMode) {
-    post([=, this]{
-        stop(stopMode);
-        remove_work();
-    });
 }
 
 void EventLoop::invoke_task(std::unique_lock<std::mutex> &lock) {
@@ -78,13 +63,5 @@ void EventLoop::invoke_task(std::unique_lock<std::mutex> &lock) {
     if (--outstanding_work == 0) {
         cv.notify_all();
     }
-}
-
-void EventLoop::stop(StopMode mode) {
-    {
-        std::lock_guard<std::mutex> lg(mtx);
-        stop_mode = mode;
-    }
-    cv.notify_all();
 }
 

@@ -2,6 +2,7 @@
 
 #include <coroutine>
 #include <exception>
+#include <iostream>
 
 struct CoroutineObject {
      struct promise_type {
@@ -18,10 +19,6 @@ struct CoroutineObject {
 
     CoroutineObject(const CoroutineObject&) = delete;
     CoroutineObject(CoroutineObject&&) = delete;
-
-    ~CoroutineObject() {
-        handle.destroy();
-    }
 
 private:
     std::coroutine_handle<promise_type> handle;
