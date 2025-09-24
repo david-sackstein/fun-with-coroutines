@@ -12,14 +12,13 @@ struct AsyncTask {
 
     bool await_ready() { return false; }
     void await_suspend(std::coroutine_handle<> h) {
-        loop.post([h] {
-            std::thread t([h] {
-                std::this_thread::sleep_for(1s);
-                std::cout << "Resumed in thread " << std::this_thread::get_id() << "\n";
+        std::thread t([=, this] {
+            std::this_thread::sleep_for(1s);
+            loop.post([=] {
                 h.resume();
             });
-            t.detach();
         });
+        t.detach();
     }
     void await_resume() {}
 };

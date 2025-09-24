@@ -26,6 +26,13 @@ struct Generator {
     {
     }
 
+    ~Generator()
+    {
+        if (_handle) {
+            _handle.destroy();
+        }
+    }
+
     bool next() {
         if (_handle.done()) {
             return false;
