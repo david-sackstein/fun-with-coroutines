@@ -27,19 +27,19 @@ public:
 
     [[nodiscard]] FdVector wait_for_fds();
 
-    std::size_t get_outstanding_work() const { return outstanding_work; }
+    std::size_t get_outstanding_work() const { return _outstanding_work; }
 
 private:
 
     FdVector get_ready_fds(const FdSet& fdSet);
-    void wait_once(FdSet& fdSet);
+    void wait_for_fds(FdSet& fdSet);
+    FdVector with_wakeup_fds() const;
 
     void add_work();
     void remove_work();
-    void interrupt_wait();
 
     FdVector _fds;
     NotifySignal _notify;
-    std::size_t outstanding_work = 0;
-    mutable std::mutex mtx;
+    std::size_t _outstanding_work = 0;
+    mutable std::mutex _mtx;
 };

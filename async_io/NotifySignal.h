@@ -17,7 +17,7 @@ public:
     NotifySignal(const NotifySignal&) = delete;
     NotifySignal& operator=(const NotifySignal&) = delete;
 
-    Fd& read_end() { return _read; }
+    const Fd& read_end() const { return _read; }
 
     void notify() const noexcept {
         char b = 1;

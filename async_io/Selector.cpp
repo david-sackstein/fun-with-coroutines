@@ -17,11 +17,9 @@ auto Selector::wait_for_fds() -> FdVector {
         return {};
     }
 
-    FdVector with_wakeup = _fds;
-    with_wakeup.push_back(std::ref(_notify.read_end()));
-    FdSet fdSet(with_wakeup);
+    FdSet fdSet(with_wakeup_fds());
 
-    wait_once(fdSet);
+    wait_for_fds(fdSet);
 
     if (fdSet.contains(_notify.read_end())) {
         _notify.drain();
@@ -31,22 +29,18 @@ auto Selector::wait_for_fds() -> FdVector {
 }
 
 void Selector::add_work() {
-    std::lock_guard<std::mutex> lg(mtx);
-    ++outstanding_work;
+    std::lock_guard<std::mutex> lg(_mtx);
+    ++_outstanding_work;
 }
 
 void Selector::remove_work() {
-    std::lock_guard<std::mutex> lg(mtx);
-    if (outstanding_work > 0) {
-        --outstanding_work;
-        if (outstanding_work == 0) {
-            interrupt_wait();
-        }
+    std::lock_guard<std::mutex> lg(_mtx);
+    if (_outstanding_work == 0) {
+        return;
     }
-}
-
-void Selector::interrupt_wait() {
-    _notify.notify();
+    if (--_outstanding_work == 0) {
+        _notify.notify();
+    }
 }
 
 auto Selector::get_ready_fds(const FdSet& fdSet) -> FdVector {
@@ -61,14 +55,12 @@ auto Selector::get_ready_fds(const FdSet& fdSet) -> FdVector {
     return ready;
 }
 
-void Selector::wait_once(FdSet& fdSet) {
+void Selector::wait_for_fds(FdSet& fdSet) {
     for (;;) {
         int ret = ::select(fdSet.max_fd() + 1, fdSet.native(), nullptr, nullptr, nullptr);
         if (ret < 0 && errno == EINTR) {
             // Rebuild fd_set and retry
-            FdVector with_wakeup = _fds;
-            with_wakeup.push_back(std::ref(_notify.read_end()));
-            fdSet = FdSet(with_wakeup);
+            fdSet = FdSet(with_wakeup_fds());
             continue;
         }
         if (ret < 0) {
@@ -76,4 +68,10 @@ void Selector::wait_once(FdSet& fdSet) {
         }
         break;
     }
+}
+
+auto Selector::with_wakeup_fds() const -> FdVector {
+    FdVector list = _fds;
+    list.push_back(std::ref(const_cast<Fd&>(_notify.read_end())));
+    return list;
 }

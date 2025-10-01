@@ -12,7 +12,7 @@ class FdSet {
     int _max_fd = -1;
 
 public:
-    FdSet(std::vector<std::reference_wrapper<Fd>>& fds) {
+    FdSet(const std::vector<std::reference_wrapper<Fd>>& fds) {
         FD_ZERO(&_fds);
         add(fds);
     }
@@ -31,7 +31,7 @@ public:
 
 private:
 
-    void add(std::vector<std::reference_wrapper<Fd>>& fds){
+    void add(const std::vector<std::reference_wrapper<Fd>>& fds){
         for (auto& fd : fds) {
             add(fd);
         }
