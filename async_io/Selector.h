@@ -6,6 +6,8 @@
 #include <vector>
 #include <functional>
 #include <chrono>
+#include <mutex>
+#include <memory>
 #include <sys/time.h>
 
 class Selector {
@@ -13,17 +15,32 @@ public:
 
     using FdVector = std::vector<std::reference_wrapper<Fd>>;
 
-    Selector(FdVector &fds, std::chrono::milliseconds timeout);
+    class Work {
+    public:
+        explicit Work(Selector &s) : s(s) { s.add_work(); }
+        ~Work() { s.remove_work(); }
+    private:
+        Selector &s;
+    };
+
+    Selector(FdVector &fds);
 
     [[nodiscard]] FdVector wait_for_fds();
+
+    std::size_t get_outstanding_work() const { return outstanding_work; }
 
 private:
 
     FdVector get_ready_fds(const FdSet& fdSet);
     void wait_once(FdSet& fdSet);
 
-    static timeval to_timeval(std::chrono::milliseconds timeout) noexcept;
+    void add_work();
+    void remove_work();
+    void interrupt_wait();
 
     FdVector _fds;
-    std::chrono::milliseconds _timeout;
+    std::unique_ptr<Fd> _wakeup_read;
+    std::unique_ptr<Fd> _wakeup_write;
+    std::size_t outstanding_work = 0;
+    mutable std::mutex mtx;
 };

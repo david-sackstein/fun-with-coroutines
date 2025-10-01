@@ -15,19 +15,13 @@ public:
         }
     }
 
-    ~Fd() {
-        if (_fd != invalid_fd) {
-            close(_fd);
-        }
+    ~Fd() { // non-moveable
+        close(_fd);
     }
 
-    // non-copyable
+    // non-copyable,
     Fd(const Fd&) = delete;
     Fd& operator=(const Fd&) = delete;
-
-    // non-movable
-    Fd(Fd&& other) noexcept = delete;
-    Fd& operator=(Fd&& other) noexcept = delete;
 
     int get() const noexcept { return _fd; }
 };
