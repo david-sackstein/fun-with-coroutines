@@ -7,8 +7,8 @@
 #include <functional>
 #include <chrono>
 #include <mutex>
-#include <memory>
 #include <sys/time.h>
+#include "PipeFds.h"
 
 class Selector {
 public:
@@ -39,8 +39,9 @@ private:
     void interrupt_wait();
 
     FdVector _fds;
-    std::unique_ptr<Fd> _wakeup_read;
-    std::unique_ptr<Fd> _wakeup_write;
+    PipeFds _pipe;
+    Fd _wakeup_read;
+    Fd _wakeup_write;
     std::size_t outstanding_work = 0;
     mutable std::mutex mtx;
 };

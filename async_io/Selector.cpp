@@ -8,15 +8,11 @@
 using std::chrono::milliseconds;
 
 Selector::Selector(FdVector &fds) :
-    _fds(fds)
-{
-    int pipe_fd[2];
-    if (::pipe(pipe_fd) != 0) {
-        throw std::system_error(errno, std::generic_category(), "pipe() failed");
-    }
-    _wakeup_read = std::make_unique<Fd>(pipe_fd[0]);
-    _wakeup_write = std::make_unique<Fd>(pipe_fd[1]);
-}
+    _fds(fds),
+    _pipe(),
+    _wakeup_read(_pipe.r),
+    _wakeup_write(_pipe.w)
+{}
 
 auto Selector::wait_for_fds() -> FdVector {
     if (_fds.empty()) {
@@ -25,16 +21,16 @@ auto Selector::wait_for_fds() -> FdVector {
 
     // Build local fd_set each wait, including wakeup read end
     FdVector with_wakeup = _fds;
-    with_wakeup.push_back(std::ref(*_wakeup_read));
+    with_wakeup.push_back(std::ref(_wakeup_read));
     FdSet fdSet(with_wakeup);
 
     wait_once(fdSet);
 
     // Drain wakeup if it fired
-    if (fdSet.contains(*_wakeup_read)) {
+    if (fdSet.contains(_wakeup_read)) {
         char buf[64];
         for (;;) {
-            ssize_t n = ::read(_wakeup_read->get(), buf, sizeof(buf));
+            ssize_t n = ::read(_wakeup_read.get(), buf, sizeof(buf));
             if (n > 0) break;
             if (n < 0 && errno == EINTR) continue;
             break;
@@ -60,10 +56,9 @@ void Selector::remove_work() {
 }
 
 void Selector::interrupt_wait() {
-    if (!_wakeup_write) return;
     char b = 1;
     for (;;) {
-        ssize_t n = ::write(_wakeup_write->get(), &b, 1);
+        ssize_t n = ::write(_wakeup_write.get(), &b, 1);
         if (n >= 0) break;
         if (errno == EINTR) continue;
         break;
@@ -88,7 +83,7 @@ void Selector::wait_once(FdSet& fdSet) {
         if (ret < 0 && errno == EINTR) {
             // Rebuild fd_set and retry
             FdVector with_wakeup = _fds;
-            with_wakeup.push_back(std::ref(*_wakeup_read));
+            with_wakeup.push_back(std::ref(_wakeup_read));
             fdSet = FdSet(with_wakeup);
             continue;
         }
