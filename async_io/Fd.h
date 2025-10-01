@@ -1,10 +1,7 @@
 #pragma once
 
 #include <unistd.h>
-#include <fcntl.h>
 #include <stdexcept>
-#include <memory>
-#include <iostream>
 
 static const int invalid_fd = -1;
 
@@ -32,5 +29,5 @@ public:
     Fd(Fd&& other) noexcept = delete;
     Fd& operator=(Fd&& other) noexcept = delete;
 
-    int get() const { return _fd; }
+    int get() const noexcept { return _fd; }
 };

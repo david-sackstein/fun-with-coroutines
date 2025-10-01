@@ -1,7 +1,11 @@
 #pragma once
 
 #include "Fd.h"
+
 #include <sys/select.h>
+#include <vector>
+#include <functional>
+#include <stdexcept>
 
 class FdSet {
     fd_set _fds;

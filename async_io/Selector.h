@@ -3,6 +3,11 @@
 #include "Fd.h"
 #include "FdSet.h"
 
+#include <vector>
+#include <functional>
+#include <chrono>
+#include <sys/time.h>
+
 class Selector {
 public:
 
@@ -10,16 +15,15 @@ public:
 
     Selector(FdVector &fds, std::chrono::milliseconds timeout);
 
-    FdVector wait_for_fds();
+    [[nodiscard]] FdVector wait_for_fds();
 
 private:
 
-    FdVector get_ready_fds();
-    void select();
+    FdVector get_ready_fds(const FdSet& fdSet);
+    void wait_once(FdSet& fdSet);
 
-    static timeval to_timeval(std::chrono::milliseconds timeout);
+    static timeval to_timeval(std::chrono::milliseconds timeout) noexcept;
 
-    FdSet _fdSet;
     FdVector _fds;
     std::chrono::milliseconds _timeout;
 };

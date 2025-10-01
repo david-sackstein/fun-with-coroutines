@@ -15,6 +15,5 @@ add_executable(fun_with_coroutines
     async_tasks/EventLoop.cpp
     async_tasks/run_async_tasks.cpp
     async_io/run_async_io.cpp
-    async_io/wait_for_fds.cpp
     async_io/Selector.cpp
 )
