@@ -1,5 +1,6 @@
 #include "EventLoop.h"
-#include <iostream>
+#include "unlock_guard.h"
+#include "work_guard.h"
 
 EventLoop g_loop{};
 
@@ -45,23 +46,13 @@ void EventLoop::run() {
     }
 }
 
-void EventLoop::invoke_task(std::unique_lock<std::mutex> &lock) {
+// assumes we are under the lock
+void EventLoop::invoke_task(std::unique_lock<std::mutex>& lock) {
     auto task = std::move(tasks.front());
     tasks.pop();
 
-    lock.unlock();
-    try {
-        task();
-    }
-    catch(...) {
-        lock.lock();
-        --outstanding_work;
-        throw;
-    }
-    lock.lock();
+    unlock_guard unlock(lock);
+    work_guard decrement(outstanding_work, cv, mtx);
 
-    if (--outstanding_work == 0) {
-        cv.notify_all();
-    }
+    task();
 }
-
