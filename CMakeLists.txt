@@ -14,11 +14,7 @@ add_executable(fun_with_coroutines
     generator/run_generator.cpp
     async_tasks/EventLoop.cpp
     async_tasks/run_async_tasks.cpp
-    async_tasks/unlock_guard.h
-    async_tasks/work_guard.h
     async_io/run_async_io.cpp
     async_io/wait_for_fds.cpp
-    async_io/wait_for_fds.h
-    async_io/Fd.h
-    async_io/FdSet.h
+    async_io/Selector.cpp
 )
