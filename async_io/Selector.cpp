@@ -13,7 +13,7 @@ Selector::Selector(FdVector &fds) :
 {}
 
 auto Selector::wait_for_fds() -> FdVector {
-    if (_fds.empty()) {
+    if (_fds.empty() || !_running.load()) {
         return {};
     }
 
@@ -22,23 +22,15 @@ auto Selector::wait_for_fds() -> FdVector {
     wait_for_fds(fdSet);
 
     if (fdSet.contains(_notify.read_end())) {
-        _notify.drain();
+        _notify.on_selected();
     }
 
     return get_ready_fds(fdSet);
 }
 
-void Selector::add_work() {
-    std::lock_guard<std::mutex> lg(_mtx);
-    ++_outstanding_work;
-}
-
-void Selector::remove_work() {
-    std::lock_guard<std::mutex> lg(_mtx);
-    if (_outstanding_work == 0) {
-        return;
-    }
-    if (--_outstanding_work == 0) {
+void Selector::stop() noexcept {
+    bool expected = true;
+    if (_running.compare_exchange_strong(expected, false)) {
         _notify.notify();
     }
 }

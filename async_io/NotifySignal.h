@@ -26,7 +26,7 @@ public:
         }
     }
 
-    void drain() const noexcept {
+    void on_selected() const noexcept {
         char b;
         while (::read(_read.get(), &b, 1) < 0 && errno == EINTR) {
             // retry on EINTR

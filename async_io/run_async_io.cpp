@@ -19,21 +19,20 @@ void run_async_io(){
     Selector selector(my_fds);
 
     // Demonstrate external stop: background thread cancels after delay
-    std::unique_ptr<Selector::Work> work = std::make_unique<Selector::Work>(selector);
     std::thread stopper([&] {
         std::this_thread::sleep_for(2s);
-        work.reset();
+        selector.stop();
         std::cout << "[stopper] stop requested" << std::endl;
     });
 
-    while (selector.get_outstanding_work() > 0) {
+    while (selector.is_running()) {
         auto ready = selector.wait_for_fds();
         for (auto &fdRef : ready) {
             if (fdRef.get().get() == std_in.get()) {
                 std::string line;
                 std::getline(std::cin, line);
                 std::cout << "Read line: " << line << std::endl;
-                work.reset();
+                selector.stop();
                 break;
             }
         }
