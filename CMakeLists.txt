@@ -19,6 +19,6 @@ add_executable(fun_with_coroutines
     async_io/run_async_io.cpp
     async_io/wait_for_fds.cpp
     async_io/wait_for_fds.h
-    async_io/FileDescriptor.h
+    async_io/Fd.h
     async_io/FdSet.h
 )

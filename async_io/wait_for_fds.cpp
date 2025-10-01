@@ -1,42 +1,41 @@
 #include "wait_for_fds.h"
-#include "FileDescriptor.h"
+#include "Fd.h"
 #include "FdSet.h"
 
 #include <sys/select.h>
 #include <vector>
-#include <chrono>
-#include <set>
-#include <stdexcept>
 #include <algorithm>
 
+using namespace std::chrono;
 
-std::vector<std::reference_wrapper<FileDescriptor>> wait_for_fds(
-    std::vector<std::reference_wrapper<FileDescriptor>>& fds,
+timeval to_timeval(std::chrono::milliseconds timeout) {
+    timeval tv{};
+    auto msec = timeout.count();
+    tv.tv_sec = msec / 1000;
+    tv.tv_usec = (msec % 1000) * 1000;
+    return tv;
+}
+
+std::vector<std::reference_wrapper<Fd>> wait_for_fds(
+    std::vector<std::reference_wrapper<Fd>> &fds,
     std::chrono::milliseconds timeout) {
 
     if (fds.empty()) {
         return {};
     }
 
-    FdSet read_fds{};
-    for (auto& fd : fds) {
-        read_fds.add(fd);
-    }
+    FdSet fdSet(fds);
 
-    timeval tv{};
-    tv.tv_sec  = std::chrono::duration_cast<std::chrono::seconds>(timeout).count();
-    tv.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(
-        timeout % std::chrono::seconds(1))
-        .count();
+    timeval tv = to_timeval(timeout);
 
-    int ret = select(read_fds.max_fd() + 1, read_fds.native(), nullptr, nullptr, &tv);
+    int ret = select(fdSet.max_fd() + 1, fdSet.native(), nullptr, nullptr, &tv);
     if (ret < 0) {
         throw std::runtime_error("select() failed");
     }
 
-    std::vector<std::reference_wrapper<FileDescriptor>> ready;
-    for (auto& fd : fds) {
-        if (read_fds.contains(fd)) {
+    std::vector<std::reference_wrapper<Fd>> ready;
+    for (auto &fd: fds) {
+        if (fdSet.contains(fd)) {
             ready.push_back(fd);
         }
     }
