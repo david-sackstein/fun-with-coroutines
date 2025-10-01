@@ -16,4 +16,9 @@ add_executable(fun_with_coroutines
     async_tasks/run_async_tasks.cpp
     async_tasks/unlock_guard.h
     async_tasks/work_guard.h
+    async_io/run_async_io.cpp
+    async_io/wait_for_fds.cpp
+    async_io/wait_for_fds.h
+    async_io/FileDescriptor.h
+    async_io/FdSet.h
 )
