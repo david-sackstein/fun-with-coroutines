@@ -9,7 +9,10 @@ void run_async_io(){
     Fd std_in(STDIN_FILENO);
 
     std::vector<std::reference_wrapper<Fd>> my_fds {std_in};
-    Selector::wait_for_fds(my_fds, 1000s);
+
+    Selector selector(my_fds, 1000s);
+
+    selector.wait_for_fds();
 
     std::cout << "Success" << std::endl;
 }

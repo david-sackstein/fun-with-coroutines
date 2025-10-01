@@ -2,33 +2,40 @@
 
 using namespace std::chrono;
 
-auto Selector::wait_for_fds(FdVector &fds, milliseconds timeout) -> FdVector {
+Selector::Selector(FdVector &fds, std::chrono::milliseconds timeout) :
+    _fdSet(fds),
+    _fds(fds),
+    _timeout(timeout)
+{
+}
 
-    if (fds.empty()) {
+auto Selector::wait_for_fds() -> FdVector {
+
+    if (_fds.empty()) {
         return {};
     }
 
-    FdSet fdSet(fds);
+    select();
 
-    select(fdSet, timeout);
-
-    return get_ready_fds(fds, fdSet);
+    return get_ready_fds();
 }
 
-auto Selector::get_ready_fds(FdVector &fds, FdSet &fdSet) -> FdVector{
-    FdVector ready;
-    for (auto &fd: fds) {
-        if (fdSet.contains(fd)) {
+auto Selector::get_ready_fds() -> FdVector {
+    FdVector ready{};
+
+    for (auto &fd: _fds) {
+        if (_fdSet.contains(fd)) {
             ready.push_back(fd);
         }
     }
+
     return ready;
 }
 
-void Selector::select(FdSet &fdSet, milliseconds timeout){
-    timeval tv = to_timeval(timeout);
+void Selector::select() {
+    timeval tv = to_timeval(_timeout);
 
-    int ret = ::select(fdSet.max_fd() + 1, fdSet.native(), nullptr, nullptr, &tv);
+    int ret = ::select(_fdSet.max_fd() + 1, _fdSet.native(), nullptr, nullptr, &tv);
     if (ret < 0) {
         throw std::system_error(errno, std::generic_category(), "select() failed");
     }
