@@ -9,9 +9,7 @@ using std::chrono::milliseconds;
 
 Selector::Selector(FdVector &fds) :
     _fds(fds),
-    _pipe(),
-    _wakeup_read(_pipe.r),
-    _wakeup_write(_pipe.w)
+    _notify()
 {}
 
 auto Selector::wait_for_fds() -> FdVector {
@@ -19,22 +17,14 @@ auto Selector::wait_for_fds() -> FdVector {
         return {};
     }
 
-    // Build local fd_set each wait, including wakeup read end
     FdVector with_wakeup = _fds;
-    with_wakeup.push_back(std::ref(_wakeup_read));
+    with_wakeup.push_back(std::ref(_notify.read_end()));
     FdSet fdSet(with_wakeup);
 
     wait_once(fdSet);
 
-    // Drain wakeup if it fired
-    if (fdSet.contains(_wakeup_read)) {
-        char buf[64];
-        for (;;) {
-            ssize_t n = ::read(_wakeup_read.get(), buf, sizeof(buf));
-            if (n > 0) break;
-            if (n < 0 && errno == EINTR) continue;
-            break;
-        }
+    if (fdSet.contains(_notify.read_end())) {
+        _notify.drain();
     }
 
     return get_ready_fds(fdSet);
@@ -56,13 +46,7 @@ void Selector::remove_work() {
 }
 
 void Selector::interrupt_wait() {
-    char b = 1;
-    for (;;) {
-        ssize_t n = ::write(_wakeup_write.get(), &b, 1);
-        if (n >= 0) break;
-        if (errno == EINTR) continue;
-        break;
-    }
+    _notify.notify();
 }
 
 auto Selector::get_ready_fds(const FdSet& fdSet) -> FdVector {
@@ -83,7 +67,7 @@ void Selector::wait_once(FdSet& fdSet) {
         if (ret < 0 && errno == EINTR) {
             // Rebuild fd_set and retry
             FdVector with_wakeup = _fds;
-            with_wakeup.push_back(std::ref(_wakeup_read));
+            with_wakeup.push_back(std::ref(_notify.read_end()));
             fdSet = FdSet(with_wakeup);
             continue;
         }

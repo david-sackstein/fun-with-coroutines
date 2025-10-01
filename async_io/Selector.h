@@ -2,13 +2,13 @@
 
 #include "Fd.h"
 #include "FdSet.h"
+#include "NotifySignal.h"
 
 #include <vector>
 #include <functional>
 #include <chrono>
 #include <mutex>
 #include <sys/time.h>
-#include "PipeFds.h"
 
 class Selector {
 public:
@@ -39,9 +39,7 @@ private:
     void interrupt_wait();
 
     FdVector _fds;
-    PipeFds _pipe;
-    Fd _wakeup_read;
-    Fd _wakeup_write;
+    NotifySignal _notify;
     std::size_t outstanding_work = 0;
     mutable std::mutex mtx;
 };
