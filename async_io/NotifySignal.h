@@ -22,6 +22,9 @@ public:
     }
 
     void notify() {
+        if (_pending) {
+            return;
+        }
         std::lock_guard<std::mutex> lock(_mtx);
         _efd.write();
         _pending = true;

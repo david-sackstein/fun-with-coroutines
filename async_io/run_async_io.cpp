@@ -9,12 +9,12 @@
 using namespace std::chrono_literals;
 
 void run_async_io(){
-    Selector selector({
-        {STDIN_FILENO, [](int fd) {
-            std::string line;
-            std::getline(std::cin, line);
-            std::cout << "Read line: " << line << std::endl;
-        }}
+    Selector selector;
+    
+    selector.post(STDIN_FILENO, [](int fd) {
+        std::string line;
+        std::getline(std::cin, line);
+        std::cout << "Read line: " << line << std::endl;
     });
 
     // Demonstrate external stop: background thread cancels after delay
@@ -27,5 +27,8 @@ void run_async_io(){
     selector.run();
 
     stopper.join();
-    std::cout << "Stopped" << std::endl;
+    
+    // Demonstrate remove: cleanup after event loop exits
+    selector.remove(STDIN_FILENO);
+    std::cout << "Stopped (stdin handler removed)" << std::endl;
 }

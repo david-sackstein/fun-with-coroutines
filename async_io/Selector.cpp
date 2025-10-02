@@ -4,19 +4,12 @@
 #include <cerrno>
 #include <unistd.h>
 
-Selector::Selector(const std::vector<FdHandler>& handlers) :
-    _handlers(handlers),
-    _notify()
-{}
-
 void Selector::run() {
-    if (_handlers.empty()) {
-        return;
-    }
-
     while (_running) {
         FdSet fdSet(with_wakeup_fds());
+
         wait_once(fdSet);
+
         dispatch_ready(fdSet);
     }
 }
@@ -24,6 +17,31 @@ void Selector::run() {
 void Selector::stop() noexcept {
     _running = false;
     _notify.notify();
+}
+
+void Selector::post(int fd, std::function<void(int)> handler) {
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+        _handlers[fd] = std::move(handler);
+    }
+    _notify.notify();
+}
+
+void Selector::remove(int fd) {
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+        _handlers.erase(fd);
+    }
+    _notify.notify();
+}
+
+auto Selector::with_wakeup_fds() -> std::vector<int> {
+    std::vector<int> fds;
+    for (const auto& [fd, handler] : copy_handlers()) {
+        fds.push_back(fd);
+    }
+    fds.push_back(_notify.arm());
+    return fds;
 }
 
 void Selector::wait_once(FdSet& fdSet) {
@@ -41,20 +59,19 @@ void Selector::wait_once(FdSet& fdSet) {
     }
 }
 
-
 void Selector::dispatch_ready(const FdSet& fdSet) {
-    for (const auto& handler : _handlers) {
-        if (fdSet.contains(handler.fd)) {
-            handler.handler(handler.fd);
+    // Copy handlers to avoid holding lock during callbacks
+    HandlerMap handlers_copy = copy_handlers();
+    
+    // Dispatch without holding lock - handlers can safely call post/remove
+    for (const auto& [fd, handler] : handlers_copy) {
+        if (fdSet.contains(fd)) {
+            handler(fd);
         }
     }
 }
 
-auto Selector::with_wakeup_fds() -> std::vector<int> {
-    std::vector<int> fds;
-    for (const auto& handler : _handlers) {
-        fds.push_back(handler.fd);
-    }
-    fds.push_back(_notify.arm());
-    return fds;
+auto Selector::copy_handlers() const -> HandlerMap {
+    std::lock_guard<std::mutex> lock(_mtx);
+    return _handlers;
 }
