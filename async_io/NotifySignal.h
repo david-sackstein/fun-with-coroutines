@@ -15,8 +15,7 @@ public:
     int arm() {
         std::lock_guard<std::mutex> lock(_mtx);
         if (_pending) {
-            uint64_t v;
-            _efd.read(v);
+            _efd.read();
             _pending = false;
         }
         return _efd.get();
@@ -24,7 +23,7 @@ public:
 
     void notify() {
         std::lock_guard<std::mutex> lock(_mtx);
-        _efd.write(1);
+        _efd.write();
         _pending = true;
     }
 

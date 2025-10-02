@@ -4,12 +4,12 @@
 #include <cerrno>
 #include <system_error>
 
-// emulate eventfd for compatibility with non-linux OS
 class EventFd {
 public:
-    EventFd(unsigned int /*init*/ = 0, int /*flags*/ = 0) {
-        if (::pipe(_pipe) < 0)
+    EventFd() {
+        if (::pipe(_pipe) < 0) {
             throw std::system_error(errno, std::generic_category());
+        }
     }
 
     ~EventFd() {
@@ -17,17 +17,27 @@ public:
         ::close(_pipe[1]);
     }
 
-    int get() const { return _pipe[0]; } // read end
+    int get() const { return _pipe[0]; } // read descriptor for select/poll
 
-    void write(uint64_t /*v*/) {
+    void write() {
         char b = 1;
-        ::write(_pipe[1], &b, 1);
+        // retry on EINTR
+        while (::write(_pipe[1], &b, 1) < 0 && errno == EINTR) {}
+
+        if (errno != 0) {
+            throw std::system_error(errno, std::generic_category(), "EventFd notify failed");
+        }
     }
 
-    void read(uint64_t &v) {
+    // clear the event (read one byte internally)
+    void read() {
         char b;
-        ::read(_pipe[0], &b, 1);
-        v = 1;
+        // retry on EINTR
+        while (::read(_pipe[0], &b, 1) < 0 && errno == EINTR) {}
+
+        if (errno != 0) {
+            throw std::system_error(errno, std::generic_category(), "EventFd clear failed");
+        }
     }
 
 private:
