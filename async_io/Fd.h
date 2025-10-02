@@ -3,9 +3,8 @@
 #include <unistd.h>
 #include <stdexcept>
 
-static const int invalid_fd = -1;
-
 class Fd {
+    static constexpr int invalid_fd = -1;
     int _fd;
 
 public:

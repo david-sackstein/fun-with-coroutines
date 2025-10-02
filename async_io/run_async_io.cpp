@@ -32,8 +32,6 @@ void run_async_io(){
                 std::string line;
                 std::getline(std::cin, line);
                 std::cout << "Read line: " << line << std::endl;
-                selector.stop();
-                break;
             }
         }
     }

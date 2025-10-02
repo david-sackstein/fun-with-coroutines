@@ -3,9 +3,6 @@
 #include <system_error>
 #include <cerrno>
 #include <unistd.h>
-#include <chrono>
-
-using std::chrono::milliseconds;
 
 Selector::Selector(FdVector &fds) :
     _fds(fds),
@@ -13,7 +10,7 @@ Selector::Selector(FdVector &fds) :
 {}
 
 auto Selector::wait_for_fds() -> FdVector {
-    if (_fds.empty() || !_running.load()) {
+    if (_fds.empty() || !_running) {
         return {};
     }
 
@@ -25,8 +22,7 @@ auto Selector::wait_for_fds() -> FdVector {
 }
 
 void Selector::stop() noexcept {
-    bool expected = true;
-    if (_running.compare_exchange_strong(expected, false)) {
+    if (_running) {
         _notify.notify();
     }
 }
