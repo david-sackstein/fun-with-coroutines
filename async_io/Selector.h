@@ -4,25 +4,30 @@
 #include "NotifySignal.h"
 
 #include <vector>
+#include <functional>
 #include <sys/time.h>
 #include <atomic>
 
 class Selector {
 public:
 
-    Selector(const std::vector<int>& fds);
+    struct FdHandler {
+        int fd;
+        std::function<void(int)> handler;
+    };
 
-    [[nodiscard]] std::vector<int> wait_for_fds();
-    bool is_running() const noexcept { return _running.load(); }
+    Selector(const std::vector<FdHandler>& handlers);
+
+    void run();
     void stop() noexcept;
 
 private:
 
-    std::vector<int> get_ready_fds(const FdSet& fdSet);
-    void wait_for_fds(FdSet& fdSet);
+    void wait_once(FdSet& fdSet);
     std::vector<int> with_wakeup_fds();
+    void dispatch_ready(const FdSet& fdSet);
 
-    std::vector<int> _fds;
+    std::vector<FdHandler> _handlers;
     NotifySignal _notify;
     std::atomic<bool> _running{true};
 };
