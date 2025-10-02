@@ -3,35 +3,33 @@
 #include <mutex>
 #include <cstdint>
 #include "EventFd.h"
-#include "Fd.h"
 
 class NotifySignal {
 public:
-    NotifySignal() : _efd_raw(), _fd(_efd_raw.get()) {}
+    NotifySignal() = default;
 
     // non-copyable
     NotifySignal(const NotifySignal&) = delete;
     NotifySignal& operator=(const NotifySignal&) = delete;
 
-    Fd& arm() {
+    int arm() {
         std::lock_guard<std::mutex> lock(_mtx);
         if (_pending) {
             uint64_t v;
-            _efd_raw.read(v);
+            _efd.read(v);
             _pending = false;
         }
-        return _fd;
+        return _efd.get();
     }
 
     void notify() {
         std::lock_guard<std::mutex> lock(_mtx);
-        _efd_raw.write(1);
+        _efd.write(1);
         _pending = true;
     }
 
 private:
-    EventFd _efd_raw;
-    Fd _fd;
+    EventFd _efd;
     std::mutex _mtx;
     bool _pending = false;
 };

@@ -4,12 +4,12 @@
 #include <cerrno>
 #include <unistd.h>
 
-Selector::Selector(FdVector &fds) :
+Selector::Selector(const std::vector<int>& fds) :
     _fds(fds),
     _notify()
 {}
 
-auto Selector::wait_for_fds() -> FdVector {
+auto Selector::wait_for_fds() -> std::vector<int> {
     if (_fds.empty() || !_running) {
         return {};
     }
@@ -27,10 +27,10 @@ void Selector::stop() noexcept {
     }
 }
 
-auto Selector::get_ready_fds(const FdSet& fdSet) -> FdVector {
-    FdVector ready{};
+auto Selector::get_ready_fds(const FdSet& fdSet) -> std::vector<int> {
+    std::vector<int> ready{};
 
-    for (auto &fd: _fds) {
+    for (int fd : _fds) {
         if (fdSet.contains(fd)) {
             ready.push_back(fd);
         }
@@ -54,8 +54,8 @@ void Selector::wait_for_fds(FdSet& fdSet) {
     }
 }
 
-auto Selector::with_wakeup_fds() -> FdVector {
-    FdVector list = _fds;
-    list.push_back(std::ref(_notify.arm()));
+auto Selector::with_wakeup_fds() -> std::vector<int> {
+    std::vector<int> list = _fds;
+    list.push_back(_notify.arm());
     return list;
 }
