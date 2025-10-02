@@ -5,7 +5,7 @@
 
 #include <cerrno>
 #include <unistd.h>
-#include <atomic>
+#include <mutex>
 
 class NotifySignal {
 public:
@@ -19,15 +19,18 @@ public:
     NotifySignal &operator=(const NotifySignal &) = delete;
 
     Fd &arm() {
-        if (_notified.exchange(false, std::memory_order_acq_rel)) {
+        std::lock_guard<std::mutex> lock(_mtx);
+        if (_notified) {
             read_one();
+            _notified = false;
         }
         return _read;
     }
 
     void notify() {
+        std::lock_guard<std::mutex> lock(_mtx);
         write_one();
-        _notified.store(true, std::memory_order_release);
+        _notified = true;
     }
 
 private:
@@ -48,7 +51,8 @@ private:
     PipeFds _pipe;
     Fd _read;
     Fd _write;
-    std::atomic<bool> _notified{false};
+    std::mutex _mtx;
+    bool _notified = false;
 };
 
 
