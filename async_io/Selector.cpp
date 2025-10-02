@@ -27,19 +27,20 @@ void Selector::stop() noexcept {
 }
 
 void Selector::wait_once(FdSet& fdSet) {
-    for (;;) {
+    while (true) {
         int ret = ::select(fdSet.max_fd() + 1, fdSet.native(), nullptr, nullptr, nullptr);
-        if (ret < 0 && errno == EINTR) {
-            // Rebuild fd_set and retry
-            fdSet = FdSet(with_wakeup_fds());
+        if (ret >= 0) {
+            return;
+        }
+        if (errno == EINTR) {
+            // retry on EINTR
             continue;
         }
-        if (ret < 0) {
-            throw std::system_error(errno, std::generic_category(), "select() failed");
-        }
-        break;
+        // real error
+        throw std::system_error(errno, std::generic_category(), "select() failed");
     }
 }
+
 
 void Selector::dispatch_ready(const FdSet& fdSet) {
     for (const auto& handler : _handlers) {
