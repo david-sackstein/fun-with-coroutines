@@ -24,7 +24,7 @@ private:
 
     FdVector get_ready_fds(const FdSet& fdSet);
     void wait_for_fds(FdSet& fdSet);
-    FdVector with_wakeup_fds() const;
+    FdVector with_wakeup_fds();
 
     FdVector _fds;
     NotifySignal _notify;

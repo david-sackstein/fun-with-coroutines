@@ -20,7 +20,7 @@ void run_async_io(){
 
     // Demonstrate external stop: background thread cancels after delay
     std::thread stopper([&] {
-        std::this_thread::sleep_for(2s);
+        std::this_thread::sleep_for(10s);
         selector.stop();
         std::cout << "[stopper] stop requested" << std::endl;
     });

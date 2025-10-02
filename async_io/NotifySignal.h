@@ -14,29 +14,45 @@ public:
         _write(_pipe.w) {}
 
     // non-copyable
-    NotifySignal(const NotifySignal&) = delete;
-    NotifySignal& operator=(const NotifySignal&) = delete;
+    NotifySignal(const NotifySignal &) = delete;
 
-    const Fd& read_end() const { return _read; }
+    NotifySignal &operator=(const NotifySignal &) = delete;
 
-    void notify() const noexcept {
+    Fd &arm() {
+        std::lock_guard<std::mutex> lock(_mtx);
+        if (_hasNotified) {
+            read_all();
+            _hasNotified = false;
+        }
+        return _read;
+    }
+
+    void notify() {
+        std::lock_guard<std::mutex> lock(_mtx);
+        write_one();
+        _hasNotified = false;
+    }
+
+private:
+    void write_one() const noexcept {
         char b = 1;
         while (::write(_write.get(), &b, 1) < 0 && errno == EINTR) {
             // retry on EINTR
         }
     }
 
-    void on_selected() const noexcept {
+    void read_all() const noexcept {
         char b;
-        while (::read(_read.get(), &b, 1) < 0 && errno == EINTR) {
-            // retry on EINTR
+        while (::read(_read.get(), &b, 1) > 0) {
+            // keep draining
         }
     }
 
-private:
     PipeFds _pipe;
     Fd _read;
     Fd _write;
+    std::mutex _mtx;
+    bool _hasNotified = false;
 };
 
 

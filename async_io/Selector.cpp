@@ -21,10 +21,6 @@ auto Selector::wait_for_fds() -> FdVector {
 
     wait_for_fds(fdSet);
 
-    if (fdSet.contains(_notify.read_end())) {
-        _notify.on_selected();
-    }
-
     return get_ready_fds(fdSet);
 }
 
@@ -62,8 +58,8 @@ void Selector::wait_for_fds(FdSet& fdSet) {
     }
 }
 
-auto Selector::with_wakeup_fds() const -> FdVector {
+auto Selector::with_wakeup_fds() -> FdVector {
     FdVector list = _fds;
-    list.push_back(std::ref(const_cast<Fd&>(_notify.read_end())));
+    list.push_back(std::ref(_notify.arm()));
     return list;
 }
