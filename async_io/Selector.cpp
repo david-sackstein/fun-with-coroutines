@@ -6,8 +6,14 @@
 
 void Selector::run() {
     while (_running) {
-        FdSet readFdSet(read_with_wakeup_fds());
-        FdSet writeFdSet(write_fds());
+        std::vector<int> write_fds = fds_for(FdMode::Write);
+        std::vector<int> read_fds = fds_for(FdMode::Read);
+
+        // Add wakeup fd to read set
+        read_fds.push_back(_interrupt.arm());
+        
+        FdSet readFdSet(read_fds);
+        FdSet writeFdSet(write_fds);
 
         wait_once(readFdSet, writeFdSet);
 
@@ -17,53 +23,32 @@ void Selector::run() {
 
 void Selector::stop() noexcept {
     _running = false;
-    _notify.notify();
+    _interrupt.notify();
 }
 
-void Selector::post_read(int fd, std::function<void(int)> handler) {
+void Selector::post(int fd, FdMode mode, std::function<void(int)> handler) {
     {
         std::lock_guard<std::mutex> lock(_mtx);
-        _read_handlers[fd] = std::move(handler);
+        handlers_for(mode)[fd] = std::move(handler);
     }
-    _notify.notify();
+    _interrupt.notify();
 }
 
-void Selector::remove_read(int fd) {
+void Selector::remove(int fd, FdMode mode) {
     {
         std::lock_guard<std::mutex> lock(_mtx);
-        _read_handlers.erase(fd);
+        handlers_for(mode).erase(fd);
     }
-    _notify.notify();
+    _interrupt.notify();
 }
 
-void Selector::post_write(int fd, std::function<void(int)> handler) {
-    {
-        std::lock_guard<std::mutex> lock(_mtx);
-        _write_handlers[fd] = std::move(handler);
-    }
-    _notify.notify();
+auto Selector::handlers_for(FdMode mode) -> HandlerMap& {
+    return mode == FdMode::Read ? _read_handlers : _write_handlers;
 }
 
-void Selector::remove_write(int fd) {
-    {
-        std::lock_guard<std::mutex> lock(_mtx);
-        _write_handlers.erase(fd);
-    }
-    _notify.notify();
-}
-
-auto Selector::read_with_wakeup_fds() -> std::vector<int> {
+auto Selector::fds_for(FdMode mode) -> std::vector<int> {
     std::vector<int> fds;
-    for (const auto& [fd, handler] : copy_read_handlers()) {
-        fds.push_back(fd);
-    }
-    fds.push_back(_notify.arm());
-    return fds;
-}
-
-auto Selector::write_fds() -> std::vector<int> {
-    std::vector<int> fds;
-    for (const auto& [fd, handler] : copy_write_handlers()) {
+    for (const auto& [fd, handler] : copy_handlers(mode)) {
         fds.push_back(fd);
     }
     return fds;
@@ -86,31 +71,23 @@ void Selector::wait_once(FdSet& readFdSet, FdSet& writeFdSet) {
 }
 
 void Selector::dispatch_ready(const FdSet& readFdSet, const FdSet& writeFdSet) {
+    dispatch_ready(FdMode::Read, readFdSet);
+    dispatch_ready(FdMode::Write, writeFdSet);
+}
+
+void Selector::dispatch_ready(FdMode mode, const FdSet& readySet) {
     // Copy handlers to avoid holding lock during callbacks
-    HandlerMap read_handlers_copy = copy_read_handlers();
-    
-    // Dispatch without holding lock - handlers can safely call post_read/post_write/remove
-    for (const auto& [fd, handler] : read_handlers_copy) {
-        if (readFdSet.contains(fd)) {
-            handler(fd);
-        }
-    }
+    HandlerMap handlers_copy = copy_handlers(mode);
 
-    HandlerMap write_handlers_copy = copy_write_handlers();
-
-    for (const auto& [fd, handler] : write_handlers_copy) {
-        if (writeFdSet.contains(fd)) {
+    // Dispatch without holding lock - handlers can safely call post/remove
+    for (const auto& [fd, handler] : handlers_copy) {
+        if (readySet.contains(fd)) {
             handler(fd);
         }
     }
 }
 
-auto Selector::copy_read_handlers() const -> HandlerMap {
+auto Selector::copy_handlers(FdMode mode) -> HandlerMap {
     std::lock_guard<std::mutex> lock(_mtx);
-    return _read_handlers;
-}
-
-auto Selector::copy_write_handlers() const -> HandlerMap {
-    std::lock_guard<std::mutex> lock(_mtx);
-    return _write_handlers;
+    return handlers_for(mode);
 }
