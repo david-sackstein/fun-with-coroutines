@@ -10,8 +10,8 @@ using namespace std::chrono_literals;
 
 void run_async_io(){
     Selector selector;
-    
-    selector.post(STDIN_FILENO, [](int fd) {
+
+    selector.post_read(STDIN_FILENO, [](int fd) {
         std::string line;
         std::getline(std::cin, line);
         std::cout << "Read line: " << line << std::endl;
@@ -29,6 +29,6 @@ void run_async_io(){
     stopper.join();
     
     // Demonstrate remove: cleanup after event loop exits
-    selector.remove(STDIN_FILENO);
+    selector.remove_read(STDIN_FILENO);
     std::cout << "Stopped (stdin handler removed)" << std::endl;
 }

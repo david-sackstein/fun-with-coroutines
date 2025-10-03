@@ -18,17 +18,26 @@ public:
 
     void run();
     void stop() noexcept;
-    void post(int fd, std::function<void(int)> handler);
-    void remove(int fd);
+
+    void post_read(int fd, std::function<void(int)> handler);
+    void remove_read(int fd);
+
+    void post_write(int fd, std::function<void(int)> handler);
+    void remove_write(int fd);
 
 private:
 
-    std::vector<int> with_wakeup_fds();
-    void wait_once(FdSet& fdSet);
-    void dispatch_ready(const FdSet& fdSet);
-    HandlerMap copy_handlers() const;
+    std::vector<int> read_with_wakeup_fds();
+    std::vector<int> write_fds();
 
-    HandlerMap _handlers;
+    void wait_once(FdSet& readFdSet, FdSet& writeFdSet);
+    void dispatch_ready(const FdSet& readFdSet, const FdSet& writeFdSet);
+
+    HandlerMap copy_read_handlers() const;
+    HandlerMap copy_write_handlers() const;
+
+    HandlerMap _read_handlers;
+    HandlerMap _write_handlers;
     NotifySignal _notify;
     std::atomic<bool> _running{true};
     mutable std::mutex _mtx;
