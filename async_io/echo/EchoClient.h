@@ -1,8 +1,7 @@
 #pragma once
 
 #include "async/AsyncIoCoroutine.h"
-
-class Reactor;
+#include "reactor/Reactor.h"
 
 class EchoClient {
 public:

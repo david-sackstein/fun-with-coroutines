@@ -2,7 +2,6 @@
 
 #include <coroutine>
 #include <exception>
-#include <iostream>
 
 struct AsyncIoCoroutine {
     struct promise_type {

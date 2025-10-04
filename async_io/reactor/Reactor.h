@@ -5,7 +5,6 @@
 
 #include <map>
 #include <functional>
-#include <sys/time.h>
 #include <atomic>
 #include <mutex>
 
