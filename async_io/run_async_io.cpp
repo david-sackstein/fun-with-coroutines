@@ -17,7 +17,7 @@ AsyncIoCoroutine read_data(Reactor& reactor) {
     
     while(true) {
         // Wait for stdin to be readable and read into buffer
-        ssize_t n = co_await AsyncReadBuffer{reactor, STDIN_FILENO, std::span<char>(buffer)};
+        ssize_t n = co_await AsyncReadBuffer<>{reactor, STDIN_FILENO, std::span<char>(buffer)};
         
         if (n <= 0) {
             std::cout << "EOF or error (n=" << n << ")" << std::endl;

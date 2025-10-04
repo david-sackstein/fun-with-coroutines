@@ -5,34 +5,60 @@
 #include <span>
 #include <unistd.h>
 
+// Generic async write operation
+// LoopUntilComplete: if false (default), writes once; if true, loops until all bytes written
+template<bool LoopUntilComplete = false>
 struct AsyncWriteBuffer {
     Reactor& reactor;
     int fd;
     std::span<const char> buffer;
     
-    AsyncWriteBuffer(Reactor& s, int f, std::span<const char> b)
-        : reactor(s), fd(f), buffer(b) {}
+    AsyncWriteBuffer(Reactor& r, int f, std::span<const char> b)
+        : reactor(r), fd(f), buffer(b) {}
     
     bool await_ready() { return false; }
     
     void await_suspend(std::coroutine_handle<> h) {
-        reactor.post(fd, Reactor::FdMode::Write, [=, this](int) {
-            // Remove the handler (one-shot behavior)
-            reactor.remove(fd, Reactor::FdMode::Write);
-            
-            // Perform the write from caller-provided buffer
-            bytes_written = ::write(fd, buffer.data(), buffer.size());
-            
-            // Resume the coroutine
-            h.resume();
-        });
+        this->handle = h;
+        offset = 0;
+        write_next();
     }
     
-    ssize_t await_resume() {
-        return bytes_written;
+    size_t await_resume() {
+        return offset;  // Total bytes actually written
     }
 
 private:
-    ssize_t bytes_written = 0;
+    void write_next() {
+        if (offset >= buffer.size()) {
+            // All bytes written, resume the coroutine
+            handle.resume();
+            return;
+        }
+        
+        // Post write operation
+        reactor.post(fd, Reactor::FdMode::Write, [this](int) {
+            reactor.remove(fd, Reactor::FdMode::Write);
+            
+            ssize_t n = ::write(fd, buffer.data() + offset, buffer.size() - offset);
+            
+            if (n <= 0) {
+                // Error, stop writing
+                handle.resume();
+                return;
+            }
+            
+            offset += n;
+            
+            // Continue writing if LoopUntilComplete is true
+            if constexpr (LoopUntilComplete) {
+                write_next();  // Loop: write more if needed
+            } else {
+                handle.resume();  // Single-shot: return immediately
+            }
+        });
+    }
+    
+    std::coroutine_handle<> handle;
+    size_t offset = 0;
 };
-

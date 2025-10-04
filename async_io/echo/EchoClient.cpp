@@ -1,8 +1,7 @@
 #include "EchoClient.h"
 #include "reactor/Reactor.h"
 #include "async/AsyncReadBuffer.h"
-#include "async/AsyncWriteExact.h"
-#include "async/AsyncReadExact.h"
+#include "async/AsyncWriteBuffer.h"
 #include <iostream>
 #include <cstring>
 
@@ -16,47 +15,60 @@ AsyncIoCoroutine EchoClient::run() {
     char read_buffer[256];
     
     while (true) {
-        // Read from stdin (single read - we don't know size in advance)
+        // Read from stdin until we get a complete line (ends with \n)
         std::cout << "[Client] Waiting for input..." << std::endl;
-        ssize_t n = co_await AsyncReadBuffer{_reactor, _stdin_fd, write_buffer};
+        size_t total = 0;
         
-        if (n <= 0) {
-            std::cout << "[Client] EOF on stdin" << std::endl;
-            break;
+        while (total < sizeof(write_buffer) - 1) {
+            ssize_t n = co_await AsyncReadBuffer<>{_reactor, _stdin_fd,
+                                                    std::span<char>(write_buffer + total, sizeof(write_buffer) - total)};
+            
+            if (n <= 0) {
+                std::cout << "[Client] EOF on stdin" << std::endl;
+                _reactor.stop();
+                co_return;
+            }
+            
+            total += n;
+            
+            // Check if the last byte is a newline
+            if (write_buffer[total - 1] == '\n') {
+                break;  // Complete line received
+            }
         }
         
-        std::string_view input(write_buffer, n);
+        std::string_view input(write_buffer, total);
         std::cout << "[Client] Read from stdin: " << input;
         
-        // Write EXACTLY n bytes to pipe1 (loop until all written)
-        size_t written = co_await AsyncWriteExact{_reactor, _write_fd, 
-                                                   std::span<const char>(write_buffer, n)};
+        // Write EXACTLY total bytes to pipe1 (loop until all written)
+        size_t written = co_await AsyncWriteBuffer<true>{_reactor, _write_fd,
+                                                          std::span<const char>(write_buffer, total)};
         
-        if (written < static_cast<size_t>(n)) {
+        if (written < total) {
             std::cout << "[Client] ✗ ERROR: Failed to write all bytes to pipe1!" << std::endl;
-            std::cout << "  Expected " << n << " bytes, wrote " << written << " bytes" << std::endl;
+            std::cout << "  Expected " << total << " bytes, wrote " << written << " bytes" << std::endl;
             break;
         }
         std::cout << "[Client] Wrote " << written << " bytes to pipe1" << std::endl;
         
-        // Read EXACTLY n bytes from pipe2 (loop until all read)
-        size_t echoed = co_await AsyncReadExact{_reactor, _read_fd, 
-                                                 std::span<char>(read_buffer, n)};
+        // Read EXACTLY total bytes from pipe2 (loop until all read)
+        size_t echoed = co_await AsyncReadBuffer<true>{_reactor, _read_fd,
+                                                        std::span<char>(read_buffer, total)};
         
-        if (echoed < static_cast<size_t>(n)) {
+        if (echoed < total) {
             std::cout << "[Client] ✗ ERROR: Failed to read all bytes from pipe2!" << std::endl;
-            std::cout << "  Expected " << n << " bytes, got " << echoed << " bytes" << std::endl;
+            std::cout << "  Expected " << total << " bytes, got " << echoed << " bytes" << std::endl;
             break;
         }
         
-        std::string_view echo(read_buffer, echoed);
-        std::cout << "[Client] Read from pipe2: " << echo;
-        
-        // Verify (now guaranteed to have correct lengths)
-        if (std::memcmp(write_buffer, read_buffer, n) == 0) {
+        // Verify echo matches
+        if (std::memcmp(write_buffer, read_buffer, total) == 0) {
+            std::string_view echo(read_buffer, total);
+            std::cout << "[Client] Read from pipe2: " << echo;
             std::cout << "[Client] ✓ Echo verified successfully!" << std::endl;
         } else {
-            std::cout << "[Client] ✗ ERROR: Echo content mismatch!" << std::endl;
+            std::cout << "[Client] ✗ ERROR: Echo mismatch!" << std::endl;
+            break;
         }
     }
     
