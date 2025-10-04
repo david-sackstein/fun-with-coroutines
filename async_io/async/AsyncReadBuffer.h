@@ -22,56 +22,68 @@ struct AsyncReadBuffer {
     void await_suspend(std::coroutine_handle<> h) {
         this->handle = h;
         offset = 0;
-        read_next();
+        wait_and_read();  // Initial call with check
     }
     
     size_t await_resume() {
-        return offset;  // Total bytes actually read
+        return offset;
     }
 
 private:
-    void read_next() {
+    // Called initially - checks if done before posting
+    void wait_and_read() {
         if (offset >= buffer.size()) {
-            // All bytes read, resume the coroutine
+            handle.resume();
+            return;
+        }
+        post_read();
+    }
+    
+    // Just posts to reactor - no checks (caller already verified need)
+    void post_read() {
+        reactor.post(fd, Reactor::FdMode::Read, [this](int) {
+            reactor.remove(fd, Reactor::FdMode::Read);
+            perform_read();
+        });
+    }
+    
+    void perform_read() {
+        ssize_t n = ::read(fd, buffer.data() + offset, buffer.size() - offset);
+        
+        if (should_retry(n)) {
+            post_read();  // Retry: just re-post
+            return;
+        }
+        
+        if (should_stop(n)) {
             handle.resume();
             return;
         }
         
-        // Post read operation
-        reactor.post(fd, Reactor::FdMode::Read, [this](int) {
-            reactor.remove(fd, Reactor::FdMode::Read);
-            
-            ssize_t n = ::read(fd, buffer.data() + offset, buffer.size() - offset);
-            
-            if (n < 0) {
-                // Check for expected non-blocking errors
-                if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                    // FD not ready (EAGAIN/EWOULDBLOCK) or interrupted (EINTR)
-                    // In both cases: re-register with reactor and retry
-                    read_next();
-                    return;
-                }
-                
-                // Real error - stop and resume with current offset
-                handle.resume();
-                return;
-            }
-            
-            if (n == 0) {
-                // EOF - stop and resume with current offset
-                handle.resume();
-                return;
-            }
-            
-            offset += n;
-            
-            // Continue reading if LoopUntilComplete is true
-            if constexpr (LoopUntilComplete) {
-                read_next();  // Loop: read more if needed
-            } else {
-                handle.resume();  // Single-shot: return immediately
-            }
-        });
+        // Success: n > 0
+        offset += n;
+        
+        if (needs_more_data()) {
+            post_read();  // Continue: just re-post
+        } else {
+            handle.resume();
+        }
+    }
+    
+    bool should_retry(ssize_t n) const {
+        return n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
+    }
+    
+    bool should_stop(ssize_t n) const {
+        return n <= 0;  // EOF or error
+    }
+    
+    bool needs_more_data() const {
+        if constexpr (LoopUntilComplete) {
+            return offset < buffer.size();
+        } else {
+            return false;  // Single-shot: always done after one read
+        }
     }
     
     std::coroutine_handle<> handle;

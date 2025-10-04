@@ -22,56 +22,68 @@ struct AsyncWriteBuffer {
     void await_suspend(std::coroutine_handle<> h) {
         this->handle = h;
         offset = 0;
-        write_next();
+        wait_and_write();  // Initial call with check
     }
     
     size_t await_resume() {
-        return offset;  // Total bytes actually written
+        return offset;
     }
 
 private:
-    void write_next() {
+    // Called initially - checks if done before posting
+    void wait_and_write() {
         if (offset >= buffer.size()) {
-            // All bytes written, resume the coroutine
+            handle.resume();
+            return;
+        }
+        post_write();
+    }
+    
+    // Just posts to reactor - no checks (caller already verified need)
+    void post_write() {
+        reactor.post(fd, Reactor::FdMode::Write, [this](int) {
+            reactor.remove(fd, Reactor::FdMode::Write);
+            perform_write();
+        });
+    }
+    
+    void perform_write() {
+        ssize_t n = ::write(fd, buffer.data() + offset, buffer.size() - offset);
+        
+        if (should_retry(n)) {
+            post_write();  // Retry: just re-post
+            return;
+        }
+        
+        if (should_stop(n)) {
             handle.resume();
             return;
         }
         
-        // Post write operation
-        reactor.post(fd, Reactor::FdMode::Write, [this](int) {
-            reactor.remove(fd, Reactor::FdMode::Write);
-            
-            ssize_t n = ::write(fd, buffer.data() + offset, buffer.size() - offset);
-            
-            if (n < 0) {
-                // Check for expected non-blocking errors
-                if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                    // FD not ready (EAGAIN/EWOULDBLOCK) or interrupted (EINTR)
-                    // In both cases: re-register with reactor and retry
-                    write_next();
-                    return;
-                }
-                
-                // Real error - stop and resume with current offset
-                handle.resume();
-                return;
-            }
-            
-            if (n == 0) {
-                // Unusual for write, but handle it - stop and resume
-                handle.resume();
-                return;
-            }
-            
-            offset += n;
-            
-            // Continue writing if LoopUntilComplete is true
-            if constexpr (LoopUntilComplete) {
-                write_next();  // Loop: write more if needed
-            } else {
-                handle.resume();  // Single-shot: return immediately
-            }
-        });
+        // Success: n > 0
+        offset += n;
+        
+        if (needs_more_data()) {
+            post_write();  // Continue: just re-post
+        } else {
+            handle.resume();
+        }
+    }
+    
+    bool should_retry(ssize_t n) const {
+        return n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
+    }
+    
+    bool should_stop(ssize_t n) const {
+        return n <= 0;  // EOF or error
+    }
+    
+    bool needs_more_data() const {
+        if constexpr (LoopUntilComplete) {
+            return offset < buffer.size();
+        } else {
+            return false;  // Single-shot: always done after one write
+        }
     }
     
     std::coroutine_handle<> handle;
