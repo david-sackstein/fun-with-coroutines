@@ -4,6 +4,7 @@
 #include <coroutine>
 #include <span>
 #include <unistd.h>
+#include <cerrno>
 
 // Generic async write operation
 // LoopUntilComplete: if false (default), writes once; if true, loops until all bytes written
@@ -42,8 +43,22 @@ private:
             
             ssize_t n = ::write(fd, buffer.data() + offset, buffer.size() - offset);
             
-            if (n <= 0) {
-                // Error, stop writing
+            if (n < 0) {
+                // Check for expected non-blocking errors
+                if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                    // FD not ready (EAGAIN/EWOULDBLOCK) or interrupted (EINTR)
+                    // In both cases: re-register with reactor and retry
+                    write_next();
+                    return;
+                }
+                
+                // Real error - stop and resume with current offset
+                handle.resume();
+                return;
+            }
+            
+            if (n == 0) {
+                // Unusual for write, but handle it - stop and resume
                 handle.resume();
                 return;
             }
