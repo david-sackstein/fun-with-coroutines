@@ -1,7 +1,6 @@
 #include "EchoClient.h"
 #include "reactor/Reactor.h"
-#include "async/AsyncReadBuffer.h"
-#include "async/AsyncWriteBuffer.h"
+#include "async/AsyncBuffer.h"
 #include <iostream>
 #include <cstring>
 

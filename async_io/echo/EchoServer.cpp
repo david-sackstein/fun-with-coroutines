@@ -1,7 +1,6 @@
 #include "EchoServer.h"
 #include "reactor/Reactor.h"
-#include "async/AsyncReadBuffer.h"
-#include "async/AsyncWriteBuffer.h"
+#include "async/AsyncBuffer.h"
 #include <iostream>
 
 EchoServer::EchoServer(Reactor& reactor, int read_fd, int write_fd)
