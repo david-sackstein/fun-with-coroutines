@@ -13,13 +13,13 @@
 // ============================================================================
 
 struct DefaultRead {
-    ssize_t operator()(int fd, char* buf, size_t count) const {
+    ssize_t operator()(int fd, char *buf, size_t count) const {
         return ::read(fd, buf, count);
     }
 };
 
 struct DefaultWrite {
-    ssize_t operator()(int fd, const char* buf, size_t count) const {
+    ssize_t operator()(int fd, const char *buf, size_t count) const {
         return ::write(fd, buf, count);
     }
 };
@@ -58,7 +58,7 @@ template<Reactor::FdMode Mode,
 struct AsyncBuffer {
     using CharType = std::conditional_t<Mode == Reactor::FdMode::Read, char, const char>;
 
-    Reactor& _reactor;
+    Reactor &_reactor;
     int _fd;
     std::span<CharType> _buffer;
     std::coroutine_handle<> _handle;
@@ -68,15 +68,15 @@ struct AsyncBuffer {
     [[no_unique_address]] IoFunc io_func{};
 
     // Constructor using default stop_condition and io_func
-    AsyncBuffer(Reactor& reactor, int fd, std::span<CharType> buffer)
-        : _reactor(reactor), _fd(fd), _buffer(buffer) {}
+    AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer)
+        : AsyncBuffer(reactor, fd, buffer, StopCondition{}, IoFunc{}) {}
 
-    // Constructor for custom stop_condition
-    AsyncBuffer(Reactor& reactor, int fd, std::span<CharType> buffer, StopCondition sc)
-        : _reactor(reactor), _fd(fd), _buffer(buffer), stop_condition(sc) {}
+    // Constructor for custom stop_condition, default io_func
+    AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer, StopCondition sc)
+        : AsyncBuffer(reactor, fd, buffer, sc, IoFunc{}) {}
 
     // Constructor for custom stop_condition and io_func
-    AsyncBuffer(Reactor& reactor, int fd, std::span<CharType> buffer, StopCondition sc, IoFunc func)
+    AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer, StopCondition sc, IoFunc func)
         : _reactor(reactor), _fd(fd), _buffer(buffer), stop_condition(sc), io_func(func) {}
 
     bool await_ready() { return false; }
