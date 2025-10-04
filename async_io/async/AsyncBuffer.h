@@ -35,16 +35,16 @@ struct SingleShot {
 };
 
 struct UntilFull {
-    bool operator()(std::span<const char> buffer, size_t offset) const {
-        return offset < buffer.size();
+    bool operator()(std::span<const char> buffer, size_t _offset) const {
+        return _offset < buffer.size();
     }
 };
 
 template<char Delimiter>
 struct UntilDelimiter {
-    bool operator()(std::span<const char> buffer, size_t offset) const {
-        if (offset == 0) return true;
-        return buffer[offset - 1] != Delimiter;
+    bool operator()(std::span<const char> buffer, size_t _offset) const {
+        if (_offset == 0) return true;
+        return buffer[_offset - 1] != Delimiter;
     }
 };
 
@@ -61,8 +61,8 @@ struct AsyncBuffer {
     Reactor& _reactor;
     int _fd;
     std::span<CharType> _buffer;
-    std::coroutine_handle<> handle;
-    size_t offset = 0;
+    std::coroutine_handle<> _handle;
+    size_t _offset = 0;
 
     [[no_unique_address]] StopCondition stop_condition{};
     [[no_unique_address]] IoFunc io_func{};
@@ -81,20 +81,20 @@ struct AsyncBuffer {
 
     bool await_ready() { return false; }
 
-    void await_suspend(std::coroutine_handle<> h) {
-        this->handle = h;
-        offset = 0;
+    void await_suspend(std::coroutine_handle<> handle) {
+        this->_handle = handle;
+        _offset = 0;
         wait_and_io();
     }
 
     size_t await_resume() {
-        return offset;
+        return _offset;
     }
 
 private:
     void wait_and_io() {
         if (!needs_more_data()) {
-            handle.resume();
+            _handle.resume();
             return;
         }
         post_io();
@@ -108,7 +108,7 @@ private:
     }
 
     void perform_io() {
-        ssize_t n = do_io();
+        ssize_t n = io_func(_fd, _buffer.data() + _offset, _buffer.size() - _offset);
 
         if (should_retry(n)) {
             post_io();
@@ -116,21 +116,18 @@ private:
         }
 
         if (should_stop(n)) {
-            handle.resume();
+            _handle.resume();
             return;
         }
 
-        offset += n;
+        _offset += n;
 
         if (needs_more_data()) {
             post_io();
-        } else {
-            handle.resume();
+            return;
         }
-    }
 
-    ssize_t do_io() {
-        return io_func(_fd, _buffer.data() + offset, _buffer.size() - offset);
+        _handle.resume();
     }
 
     bool should_retry(ssize_t n) const {
@@ -142,7 +139,7 @@ private:
     }
 
     bool needs_more_data() const {
-        return stop_condition(_buffer, offset);
+        return stop_condition(_buffer, _offset);
     }
 };
 
