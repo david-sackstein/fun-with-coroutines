@@ -35,16 +35,15 @@ struct SingleShot {
 };
 
 struct UntilFull {
-    bool operator()(std::span<const char> buffer, size_t _offset) const {
-        return _offset < buffer.size();
+    bool operator()(std::span<const char> buffer, size_t offset) const {
+        return offset < buffer.size();
     }
 };
 
 template<char Delimiter>
 struct UntilDelimiter {
-    bool operator()(std::span<const char> buffer, size_t _offset) const {
-        if (_offset == 0) return true;
-        return buffer[_offset - 1] != Delimiter;
+    bool operator()(std::span<const char> buffer, size_t offset) const {
+        return offset == 0 || buffer[offset - 1] != Delimiter;
     }
 };
 
@@ -67,22 +66,20 @@ struct AsyncBuffer {
     [[no_unique_address]] StopCondition stop_condition{};
     [[no_unique_address]] IoFunc io_func{};
 
-    // Constructor using default stop_condition and io_func
+    // Constructor delegation
     AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer)
         : AsyncBuffer(reactor, fd, buffer, StopCondition{}, IoFunc{}) {}
 
-    // Constructor for custom stop_condition, default io_func
     AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer, StopCondition sc)
         : AsyncBuffer(reactor, fd, buffer, sc, IoFunc{}) {}
 
-    // Constructor for custom stop_condition and io_func
     AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer, StopCondition sc, IoFunc func)
         : _reactor(reactor), _fd(fd), _buffer(buffer), stop_condition(sc), io_func(func) {}
 
     bool await_ready() { return false; }
 
     void await_suspend(std::coroutine_handle<> handle) {
-        this->_handle = handle;
+        _handle = handle;
         _offset = 0;
         wait_and_io();
     }
@@ -115,27 +112,19 @@ private:
             return;
         }
 
-        if (should_stop(n)) {
-            _handle.resume();
-            return;
+        if (n > 0) {
+            _offset += n;
         }
-
-        _offset += n;
 
         if (needs_more_data()) {
             post_io();
-            return;
+        } else {
+            _handle.resume();
         }
-
-        _handle.resume();
     }
 
     bool should_retry(ssize_t n) const {
         return n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
-    }
-
-    bool should_stop(ssize_t n) const {
-        return n <= 0;
     }
 
     bool needs_more_data() const {
@@ -143,7 +132,9 @@ private:
     }
 };
 
-// Convenient aliases
+// ============================================================================
+// Convenient Aliases
+// ============================================================================
 
 template<typename IoFunc = DefaultRead>
 using AsyncReadBuffer = AsyncBuffer<Reactor::FdMode::Read, SingleShot, IoFunc>;
