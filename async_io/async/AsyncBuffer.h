@@ -4,9 +4,7 @@
 
 #include <coroutine>
 #include <span>
-#include <unistd.h>
 #include <cerrno>
-#include <type_traits>
 
 // ============================================================================
 // Default I/O functions

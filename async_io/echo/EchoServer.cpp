@@ -3,30 +3,32 @@
 #include "async/AsyncBuffer.h"
 #include <print>
 
-EchoServer::EchoServer(Reactor& reactor, int read_fd, int write_fd)
-    : _reactor(reactor), _read_fd(read_fd), _write_fd(write_fd) {}
+EchoServer::EchoServer(Reactor &reactor, int read_fd, int write_fd)
+    : _reactor(reactor),
+      _read_fd(read_fd),
+      _write_fd(write_fd) {}
 
 AsyncIoCoroutine EchoServer::run() {
     std::print("[Server] Started\n");
-    
+
     char buffer[256];
-    
+
     while (true) {
         size_t total = co_await async_read_until<'\n'>(_reactor, _read_fd, buffer);
-        
+
         if (total == 0) {
             std::print("[Server] EOF on pipe1\n");
             co_return;
         }
-        
+
         log_received_message(buffer, total);
-        
+
         size_t written = co_await async_write_exact(_reactor, _write_fd, {buffer, total});
         if (!check_write_complete(total, written)) {
             break;
         }
     }
-    
+
     std::print("[Server] Finished\n");
 }
 
