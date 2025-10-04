@@ -12,7 +12,7 @@ AsyncIoCoroutine EchoServer::run() {
     char buffer[256];
     
     while (true) {
-        size_t total = co_await AsyncReadUntil<'\n'>{_reactor, _read_fd, buffer};
+        size_t total = co_await async_read_until<'\n'>(_reactor, _read_fd, buffer);
         
         if (total == 0) {
             std::print("[Server] EOF on pipe1\n");
@@ -21,8 +21,8 @@ AsyncIoCoroutine EchoServer::run() {
         
         log_received_message(std::span<const char>(buffer, total));
         
-        size_t written = co_await AsyncWriteExact<>{_reactor, _write_fd,
-                                                     std::span<const char>(buffer, total)};
+        size_t written = co_await async_write_exact(_reactor, _write_fd,
+                                                     std::span<const char>(buffer, total));
         if (!check_write_complete(total, written)) {
             break;
         }

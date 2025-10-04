@@ -49,9 +49,7 @@ struct UntilDelimiter {
 // AsyncBuffer
 // ============================================================================
 
-template<Reactor::FdMode Mode,
-    typename StopCondition = SingleShot,
-    typename IoFunc = std::conditional_t<Mode == Reactor::FdMode::Read, DefaultRead, DefaultWrite>>
+template<Reactor::FdMode Mode, typename StopCondition, typename IoFunc>
 struct AsyncBuffer {
     using CharType = std::conditional_t<Mode == Reactor::FdMode::Read, char, const char>;
 
@@ -61,16 +59,10 @@ struct AsyncBuffer {
     std::coroutine_handle<> _handle;
     size_t _offset = 0;
 
-    [[no_unique_address]] StopCondition stop_condition{};
-    [[no_unique_address]] IoFunc io_func{};
+    [[no_unique_address]] StopCondition stop_condition;
+    [[no_unique_address]] IoFunc io_func;
 
-    // Constructor delegation
-    AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer)
-        : AsyncBuffer(reactor, fd, buffer, StopCondition{}, IoFunc{}) {}
-
-    AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer, StopCondition sc)
-        : AsyncBuffer(reactor, fd, buffer, sc, IoFunc{}) {}
-
+    // Single constructor - all parameters explicit
     AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer, StopCondition sc, IoFunc func)
         : _reactor(reactor), _fd(fd), _buffer(buffer), stop_condition(sc), io_func(func) {}
 
@@ -136,20 +128,38 @@ private:
 };
 
 // ============================================================================
-// Convenient Aliases
+// Factory Functions - Clean function-style interface
 // ============================================================================
 
-template<typename IoFunc = DefaultRead>
-using AsyncReadBuffer = AsyncBuffer<Reactor::FdMode::Read, SingleShot, IoFunc>;
+// Read operations
+inline auto async_read_buffer(Reactor& reactor, int fd, std::span<char> buffer) {
+    return AsyncBuffer<Reactor::FdMode::Read, SingleShot, DefaultRead>{
+        reactor, fd, buffer, SingleShot{}, DefaultRead{}
+    };
+}
 
-template<typename IoFunc = DefaultRead>
-using AsyncReadExact = AsyncBuffer<Reactor::FdMode::Read, UntilFull, IoFunc>;
+inline auto async_read_exact(Reactor& reactor, int fd, std::span<char> buffer) {
+    return AsyncBuffer<Reactor::FdMode::Read, UntilFull, DefaultRead>{
+        reactor, fd, buffer, UntilFull{}, DefaultRead{}
+    };
+}
 
-template<char Delimiter, typename IoFunc = DefaultRead>
-using AsyncReadUntil = AsyncBuffer<Reactor::FdMode::Read, UntilDelimiter<Delimiter>, IoFunc>;
+template<char Delimiter>
+inline auto async_read_until(Reactor& reactor, int fd, std::span<char> buffer) {
+    return AsyncBuffer<Reactor::FdMode::Read, UntilDelimiter<Delimiter>, DefaultRead>{
+        reactor, fd, buffer, UntilDelimiter<Delimiter>{}, DefaultRead{}
+    };
+}
 
-template<typename IoFunc = DefaultWrite>
-using AsyncWriteBuffer = AsyncBuffer<Reactor::FdMode::Write, SingleShot, IoFunc>;
+// Write operations
+inline auto async_write_buffer(Reactor& reactor, int fd, std::span<const char> buffer) {
+    return AsyncBuffer<Reactor::FdMode::Write, SingleShot, DefaultWrite>{
+        reactor, fd, buffer, SingleShot{}, DefaultWrite{}
+    };
+}
 
-template<typename IoFunc = DefaultWrite>
-using AsyncWriteExact = AsyncBuffer<Reactor::FdMode::Write, UntilFull, IoFunc>;
+inline auto async_write_exact(Reactor& reactor, int fd, std::span<const char> buffer) {
+    return AsyncBuffer<Reactor::FdMode::Write, UntilFull, DefaultWrite>{
+        reactor, fd, buffer, UntilFull{}, DefaultWrite{}
+    };
+}

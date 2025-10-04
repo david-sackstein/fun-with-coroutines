@@ -15,7 +15,7 @@ AsyncIoCoroutine EchoClient::run() {
     
     while (true) {
         std::print("[Client] Waiting for input...\n");
-        size_t total = co_await AsyncReadUntil<'\n'>{_reactor, _stdin_fd, write_buffer};
+        size_t total = co_await async_read_until<'\n'>(_reactor, _stdin_fd, write_buffer);
         
         if (total == 0) {
             std::print("[Client] EOF on stdin\n");
@@ -25,14 +25,14 @@ AsyncIoCoroutine EchoClient::run() {
 
         log_input(std::span<const char>(write_buffer, total));
         
-        size_t written = co_await AsyncWriteExact<>{_reactor, _write_fd,
-                                                     std::span<const char>(write_buffer, total)};
+        size_t written = co_await async_write_exact(_reactor, _write_fd,
+                                                     std::span<const char>(write_buffer, total));
         if (!check_write_complete(total, written)) {
             break;
         }
         
-        size_t echoed = co_await AsyncReadExact<>{_reactor, _read_fd,
-                                                   std::span<char>(read_buffer, total)};
+        size_t echoed = co_await async_read_exact(_reactor, _read_fd,
+                                                   std::span<char>(read_buffer, total));
         if (!check_read_complete(total, echoed)) {
             break;
         }
@@ -49,7 +49,7 @@ AsyncIoCoroutine EchoClient::run() {
 
 void EchoClient::log_input(std::span<const char> data) {
     std::string_view input(data.data(), data.size());
-    std::print("[Client] Read from stdin: {}", std::string_view input(data.data(), data.size()));
+    std::print("[Client] Read from stdin: {}", input);
 }
 
 bool EchoClient::check_write_complete(size_t expected, size_t actual) {
