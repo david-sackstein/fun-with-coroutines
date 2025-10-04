@@ -9,14 +9,14 @@
 #include <atomic>
 #include <mutex>
 
-class Selector {
+class Reactor {
 public:
 
     enum class FdMode { Read, Write };
 
     using HandlerMap = std::map<int, std::function<void(int)>>;
 
-    Selector() = default;
+    Reactor() = default;
 
     void run();
     void stop() noexcept;

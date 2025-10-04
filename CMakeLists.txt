@@ -15,5 +15,9 @@ add_executable(fun_with_coroutines
     async_tasks/EventLoop.cpp
     async_tasks/run_async_tasks.cpp
     async_io/run_async_io.cpp
-    async_io/Selector.cpp
+    async_io/reactor/Reactor.cpp
+)
+
+target_include_directories(fun_with_coroutines PRIVATE
+    async_io
 )

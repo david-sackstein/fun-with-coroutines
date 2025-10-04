@@ -1,10 +1,10 @@
-#include "Selector.h"
+#include "Reactor.h"
 
 #include <system_error>
 #include <cerrno>
 #include <unistd.h>
 
-void Selector::run() {
+void Reactor::run() {
     while (_running) {
         std::vector<int> write_fds = fds_for(FdMode::Write);
         std::vector<int> read_fds = fds_for(FdMode::Read);
@@ -21,12 +21,12 @@ void Selector::run() {
     }
 }
 
-void Selector::stop() noexcept {
+void Reactor::stop() noexcept {
     _running = false;
     _interrupt.notify();
 }
 
-void Selector::post(int fd, FdMode mode, std::function<void(int)> handler) {
+void Reactor::post(int fd, FdMode mode, std::function<void(int)> handler) {
     {
         std::lock_guard<std::mutex> lock(_mtx);
         handlers_for(mode)[fd] = std::move(handler);
@@ -34,7 +34,7 @@ void Selector::post(int fd, FdMode mode, std::function<void(int)> handler) {
     _interrupt.notify();
 }
 
-void Selector::remove(int fd, FdMode mode) {
+void Reactor::remove(int fd, FdMode mode) {
     {
         std::lock_guard<std::mutex> lock(_mtx);
         handlers_for(mode).erase(fd);
@@ -42,11 +42,11 @@ void Selector::remove(int fd, FdMode mode) {
     _interrupt.notify();
 }
 
-auto Selector::handlers_for(FdMode mode) -> HandlerMap& {
+auto Reactor::handlers_for(FdMode mode) -> HandlerMap& {
     return mode == FdMode::Read ? _read_handlers : _write_handlers;
 }
 
-auto Selector::fds_for(FdMode mode) -> std::vector<int> {
+auto Reactor::fds_for(FdMode mode) -> std::vector<int> {
     std::vector<int> fds;
     for (const auto& [fd, handler] : copy_handlers(mode)) {
         fds.push_back(fd);
@@ -54,7 +54,7 @@ auto Selector::fds_for(FdMode mode) -> std::vector<int> {
     return fds;
 }
 
-void Selector::wait_once(FdSet& readFdSet, FdSet& writeFdSet) {
+void Reactor::wait_once(FdSet& readFdSet, FdSet& writeFdSet) {
     auto max_fd = std::max(readFdSet.max_fd(), writeFdSet.max_fd());
     while (true) {
         int ret = ::select(max_fd + 1, readFdSet.native(), writeFdSet.native(), nullptr, nullptr);
@@ -70,12 +70,12 @@ void Selector::wait_once(FdSet& readFdSet, FdSet& writeFdSet) {
     }
 }
 
-void Selector::dispatch_ready(const FdSet& readFdSet, const FdSet& writeFdSet) {
+void Reactor::dispatch_ready(const FdSet& readFdSet, const FdSet& writeFdSet) {
     dispatch_ready(FdMode::Read, readFdSet);
     dispatch_ready(FdMode::Write, writeFdSet);
 }
 
-void Selector::dispatch_ready(FdMode mode, const FdSet& readySet) {
+void Reactor::dispatch_ready(FdMode mode, const FdSet& readySet) {
     // Copy handlers to avoid holding lock during callbacks
     HandlerMap handlers_copy = copy_handlers(mode);
 
@@ -87,7 +87,7 @@ void Selector::dispatch_ready(FdMode mode, const FdSet& readySet) {
     }
 }
 
-auto Selector::copy_handlers(FdMode mode) -> HandlerMap {
+auto Reactor::copy_handlers(FdMode mode) -> HandlerMap {
     std::lock_guard<std::mutex> lock(_mtx);
     return handlers_for(mode);
 }
