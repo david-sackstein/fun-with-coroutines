@@ -15,7 +15,11 @@ add_executable(fun_with_coroutines
     async_tasks/EventLoop.cpp
     async_tasks/run_async_tasks.cpp
     async_io/run_async_io.cpp
+    async_io/run_echo_demo.cpp
     async_io/reactor/Reactor.cpp
+    async_io/echo/Pipe.cpp
+    async_io/echo/EchoClient.cpp
+    async_io/echo/EchoServer.cpp
 )
 
 target_include_directories(fun_with_coroutines PRIVATE
