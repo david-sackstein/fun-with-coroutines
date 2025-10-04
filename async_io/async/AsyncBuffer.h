@@ -62,9 +62,12 @@ struct AsyncBuffer {
     [[no_unique_address]] StopCondition stop_condition;
     [[no_unique_address]] IoFunc io_func;
 
-    // Single constructor - all parameters explicit
     AsyncBuffer(Reactor &reactor, int fd, std::span<CharType> buffer, StopCondition sc, IoFunc func)
-        : _reactor(reactor), _fd(fd), _buffer(buffer), stop_condition(sc), io_func(func) {}
+        : _reactor(reactor),
+          _fd(fd),
+          _buffer(buffer),
+          stop_condition(sc),
+          io_func(func) {}
 
     bool await_ready() { return false; }
 
@@ -127,38 +130,34 @@ private:
     }
 };
 
-// ============================================================================
-// Factory Functions - Clean function-style interface
-// ============================================================================
-
 // Read operations
-inline auto async_read_buffer(Reactor& reactor, int fd, std::span<char> buffer) {
+inline auto async_read_buffer(Reactor &reactor, int fd, std::span<char> buffer) {
     return AsyncBuffer<Reactor::FdMode::Read, SingleShot, DefaultRead>{
         reactor, fd, buffer, SingleShot{}, DefaultRead{}
     };
 }
 
-inline auto async_read_exact(Reactor& reactor, int fd, std::span<char> buffer) {
+inline auto async_read_exact(Reactor &reactor, int fd, std::span<char> buffer) {
     return AsyncBuffer<Reactor::FdMode::Read, UntilFull, DefaultRead>{
         reactor, fd, buffer, UntilFull{}, DefaultRead{}
     };
 }
 
 template<char Delimiter>
-inline auto async_read_until(Reactor& reactor, int fd, std::span<char> buffer) {
+inline auto async_read_until(Reactor &reactor, int fd, std::span<char> buffer) {
     return AsyncBuffer<Reactor::FdMode::Read, UntilDelimiter<Delimiter>, DefaultRead>{
         reactor, fd, buffer, UntilDelimiter<Delimiter>{}, DefaultRead{}
     };
 }
 
 // Write operations
-inline auto async_write_buffer(Reactor& reactor, int fd, std::span<const char> buffer) {
+inline auto async_write_buffer(Reactor &reactor, int fd, std::span<const char> buffer) {
     return AsyncBuffer<Reactor::FdMode::Write, SingleShot, DefaultWrite>{
         reactor, fd, buffer, SingleShot{}, DefaultWrite{}
     };
 }
 
-inline auto async_write_exact(Reactor& reactor, int fd, std::span<const char> buffer) {
+inline auto async_write_exact(Reactor &reactor, int fd, std::span<const char> buffer) {
     return AsyncBuffer<Reactor::FdMode::Write, UntilFull, DefaultWrite>{
         reactor, fd, buffer, UntilFull{}, DefaultWrite{}
     };

@@ -19,10 +19,9 @@ AsyncIoCoroutine EchoServer::run() {
             co_return;
         }
         
-        log_received_message(std::span<const char>(buffer, total));
+        log_received_message(buffer, total);
         
-        size_t written = co_await async_write_exact(_reactor, _write_fd,
-                                                     std::span<const char>(buffer, total));
+        size_t written = co_await async_write_exact(_reactor, _write_fd, {buffer, total});
         if (!check_write_complete(total, written)) {
             break;
         }
@@ -31,9 +30,8 @@ AsyncIoCoroutine EchoServer::run() {
     std::print("[Server] Finished\n");
 }
 
-void EchoServer::log_received_message(std::span<const char> data) {
-    std::string_view message(data.data(), data.size());
-    std::print("[Server] Received: {}", message);
+void EchoServer::log_received_message(const char *data, size_t size) {
+    std::print("[Server] Received: {}", std::string_view(data, size));
 }
 
 bool EchoServer::check_write_complete(size_t expected, size_t actual) {

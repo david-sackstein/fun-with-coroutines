@@ -23,22 +23,19 @@ AsyncIoCoroutine EchoClient::run() {
             co_return;
         }
 
-        log_input(std::span<const char>(write_buffer, total));
+        log_input(write_buffer, total);
         
-        size_t written = co_await async_write_exact(_reactor, _write_fd,
-                                                     std::span<const char>(write_buffer, total));
+        size_t written = co_await async_write_exact(_reactor, _write_fd, {write_buffer, total});
         if (!check_write_complete(total, written)) {
             break;
         }
         
-        size_t echoed = co_await async_read_exact(_reactor, _read_fd,
-                                                   std::span<char>(read_buffer, total));
+        size_t echoed = co_await async_read_exact(_reactor, _read_fd, {read_buffer, total});
         if (!check_read_complete(total, echoed)) {
             break;
         }
         
-        if (!verify_and_log_echo(std::span<const char>(write_buffer, total),
-                                 std::span<const char>(read_buffer, echoed))) {
+        if (!verify_and_log_echo(write_buffer, total, read_buffer, echoed)) {
             break;
         }
     }
@@ -47,9 +44,8 @@ AsyncIoCoroutine EchoClient::run() {
     _reactor.stop();
 }
 
-void EchoClient::log_input(std::span<const char> data) {
-    std::string_view input(data.data(), data.size());
-    std::print("[Client] Read from stdin: {}", input);
+void EchoClient::log_input(const char *data, size_t size) {
+    std::print("[Client] Read from stdin: {}", std::string_view(data, size));
 }
 
 bool EchoClient::check_write_complete(size_t expected, size_t actual) {
@@ -71,10 +67,10 @@ bool EchoClient::check_read_complete(size_t expected, size_t actual) {
     return true;
 }
 
-bool EchoClient::verify_and_log_echo(std::span<const char> sent, std::span<const char> received) {
-    if (std::memcmp(sent.data(), received.data(), sent.size()) == 0) {
-        std::string_view echo(received.data(), received.size());
-        std::print("[Client] Read from pipe2: {}", echo);
+bool EchoClient::verify_and_log_echo(const char *sent, size_t sent_size, 
+                                     const char *received, size_t received_size) {
+    if (std::memcmp(sent, received, sent_size) == 0) {
+        std::print("[Client] Read from pipe2: {}", std::string_view(received, received_size));
         std::print("[Client] ✓ Echo verified successfully!\n");
         return true;
     }
