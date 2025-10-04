@@ -2,26 +2,26 @@
 #include "CoroutineObject.h"
 #include "AsyncTask.h"
 
-#include <iostream>
+#include <print>
 
 using namespace std::chrono_literals;
 
 CoroutineObject my_task(EventLoop &loop) {
     EventLoop::Work guard(loop);
 
-    std::cout << "From thread " << std::this_thread::get_id() << std::endl;
+    std::print("From thread {}\n", std::this_thread::get_id());
 
-    std::cout << "Step 1" << std::endl;
+    std::print("Step 1\n");
     co_await AsyncTask{loop};
 
-    std::cout << "From thread " << std::this_thread::get_id() << std::endl;
+    std::print("From thread {}\n", std::this_thread::get_id());
 
-    std::cout << "Step 2" << std::endl;
+    std::print("Step 2\n");
     co_await AsyncTask{loop};
 
-    std::cout << "From thread " << std::this_thread::get_id() << std::endl;
+    std::print("From thread {}\n", std::this_thread::get_id());
 
-    std::cout << "Step 3" << std::endl;
+    std::print("Step 3\n");
 }
 
 void run_async_tasks_in_event_loop() {
@@ -30,5 +30,5 @@ void run_async_tasks_in_event_loop() {
 
     g_loop.run();
 
-    std::cout << "Loop exited cleanly\n";
+    std::print("Loop exited cleanly\n");
 }

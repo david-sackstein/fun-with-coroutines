@@ -1,5 +1,5 @@
 #include <coroutine>
-#include <iostream>
+#include <print>
 
 struct Generator {
 
@@ -59,10 +59,10 @@ void run_generator() {
     auto generator = createGenerator(10);
     while (generator.next()){
         int value = generator.get_current_value();
-        std::cout << value << "\n";
+        std::print("{}\n", value);
     }
     while (generator.next()){
         int value = generator.get_current_value();
-        std::cout << value << "\n";
+        std::print("{}\n", value);
     }
 }

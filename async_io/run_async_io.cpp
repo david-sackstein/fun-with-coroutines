@@ -3,14 +3,14 @@
 #include "async/AsyncIoCoroutine.h"
 
 #include <unistd.h>
-#include <iostream>
+#include <print>
 #include <string>
 #include <thread>
 
 using namespace std::chrono_literals;
 
 AsyncIoCoroutine read_data(Reactor& reactor) {
-    std::cout << "Starting coroutine-based I/O..." << std::endl;
+    std::print("Starting coroutine-based I/O...\n");
 
     char buffer[1024];
     size_t total_bytes = 0;
@@ -20,16 +20,15 @@ AsyncIoCoroutine read_data(Reactor& reactor) {
         ssize_t n = co_await AsyncReadBuffer<>{reactor, STDIN_FILENO, std::span<char>(buffer)};
         
         if (n <= 0) {
-            std::cout << "EOF or error (n=" << n << ")" << std::endl;
+            std::print("EOF or error (n={})\n", n);
             break;
         }
         
         total_bytes += n;
-        std::cout << "Read " << n << " bytes: " 
-                  << std::string_view(buffer, n) << std::endl;
+        std::print("Read {} bytes: {}\n", n, std::string_view(buffer, n));
     }
     
-    std::cout << "Total bytes read: " << total_bytes << std::endl;
+    std::print("Total bytes read: {}\n", total_bytes);
 }
 
 void run_async_io(){
@@ -42,7 +41,7 @@ void run_async_io(){
     std::thread stopper([&] {
         std::this_thread::sleep_for(10s);
         reactor.stop();
-        std::cout << "[stopper] stop requested" << std::endl;
+        std::print("[stopper] stop requested\n");
     });
     
     // Run the event loop - it will dispatch I/O events
@@ -50,5 +49,5 @@ void run_async_io(){
     
     stopper.join();
     
-    std::cout << "Reactor stopped cleanly" << std::endl;
+    std::print("Reactor stopped cleanly\n");
 }

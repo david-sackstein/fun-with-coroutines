@@ -18,6 +18,7 @@ private:
     int _read_fd;
     
     void log_input(std::span<const char> data);
-    void log_write_result(size_t bytes_written);
+    bool check_write_complete(size_t expected, size_t actual);
+    bool check_read_complete(size_t expected, size_t actual);
     bool verify_and_log_echo(std::span<const char> sent, std::span<const char> received);
 };

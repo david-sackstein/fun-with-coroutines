@@ -2,7 +2,7 @@
 #include "echo/Pipe.h"
 #include "echo/EchoClient.h"
 #include "echo/EchoServer.h"
-#include <iostream>
+#include <print>
 #include <unistd.h>
 #include <fcntl.h>
 #include <thread>
@@ -11,9 +11,9 @@
 using namespace std::chrono_literals;
 
 void run_echo_demo() {
-    std::cout << "=== Echo Server Demo ===" << std::endl;
-    std::cout << "Type messages (ending with newline), they will be echoed through pipes" << std::endl;
-    std::cout << "Press Ctrl+D to exit (or wait 30s for timeout)" << std::endl << std::endl;
+    std::print("=== Echo Server Demo ===\n");
+    std::print("Type messages (ending with newline), they will be echoed through pipes\n");
+    std::print("Press Ctrl+D to exit (or wait 30s for timeout)\n\n");
     
     // Set stdin to non-blocking
     fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
@@ -35,7 +35,7 @@ void run_echo_demo() {
     // Demonstrate external stop: background thread cancels after delay
     std::thread stopper([&] {
         std::this_thread::sleep_for(10s);
-        std::cout << "\n[Stopper] Timeout - stopping _reactor" << std::endl;
+        std::print("\n[Stopper] Timeout - stopping _reactor\n");
         reactor.stop();
     });
     
@@ -44,5 +44,5 @@ void run_echo_demo() {
     
     stopper.join();
     
-    std::cout << "\n=== Echo Server Demo Finished ===" << std::endl;
+    std::print("\n=== Echo Server Demo Finished ===\n");
 }

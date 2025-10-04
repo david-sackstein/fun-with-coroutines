@@ -17,5 +17,5 @@ private:
     int _write_fd;
     
     void log_received_message(std::span<const char> data);
-    void log_echo_result(size_t bytes_written);
+    bool check_write_complete(size_t expected, size_t actual);
 };

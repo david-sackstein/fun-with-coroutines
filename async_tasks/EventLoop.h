@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <atomic>
+#include <functional>
 
 class EventLoop {
 public:
