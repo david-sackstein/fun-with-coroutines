@@ -29,9 +29,7 @@ struct DefaultWrite {
 // ============================================================================
 
 struct SingleShot {
-    bool operator()(std::span<const char>, size_t) const {
-        return false;
-    }
+    bool operator()(std::span<const char>, size_t) const { return false; }
 };
 
 struct UntilFull {
@@ -112,9 +110,14 @@ private:
             return;
         }
 
-        if (n > 0) {
-            _offset += n;
+        // Stop immediately on EOF or real error
+        if (n <= 0) {
+            _handle.resume();
+            return;
         }
+
+        // Success: n > 0
+        _offset += n;
 
         if (needs_more_data()) {
             post_io();
