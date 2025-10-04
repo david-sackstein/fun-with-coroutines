@@ -10,33 +10,22 @@ AsyncIoCoroutine EchoServer::run() {
     std::cout << "[Server] Started" << std::endl;
     
     char buffer[256];
-    size_t total = 0;
     
     while (true) {
-        // Read until we get a complete line (ends with \n)
-        while (total < sizeof(buffer) - 1) {
-            ssize_t n = co_await AsyncReadBuffer<>{_reactor, _read_fd, 
-                                                    std::span<char>(buffer + total, sizeof(buffer) - total)};
-            
-            if (n <= 0) {
-                std::cout << "[Server] EOF on pipe1" << std::endl;
-                co_return;
-            }
-            
-            total += n;
-            
-            // Check if the last byte is a newline
-            if (buffer[total - 1] == '\n') {
-                break;  // Complete line received
-            }
+        // Read until newline (using stop condition!)
+        size_t total = co_await AsyncReadUntil<'\n'>{_reactor, _read_fd, buffer};
+        
+        if (total == 0) {
+            std::cout << "[Server] EOF on pipe1" << std::endl;
+            co_return;
         }
         
         std::string_view data(buffer, total);
         std::cout << "[Server] Received: " << data;
         
         // Echo EXACTLY total bytes to pipe2 (loop until all written)
-        size_t written = co_await AsyncWriteBuffer<true>{_reactor, _write_fd,
-                                                          std::span<const char>(buffer, total)};
+        size_t written = co_await AsyncWriteExact<>{_reactor, _write_fd,
+                                                     std::span<const char>(buffer, total)};
         
         if (written < total) {
             std::cout << "[Server] ✗ ERROR: Failed to write all bytes to pipe2!" << std::endl;
@@ -45,7 +34,6 @@ AsyncIoCoroutine EchoServer::run() {
         }
         
         std::cout << "[Server] Echoed " << written << " bytes to pipe2" << std::endl;
-        total = 0;  // Reset for next message
     }
     
     std::cout << "[Server] Finished" << std::endl;

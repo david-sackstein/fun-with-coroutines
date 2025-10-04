@@ -7,19 +7,70 @@
 #include <cerrno>
 #include <type_traits>
 
+// Default I/O functions (stateless, zero-size with [[no_unique_address]])
+struct DefaultRead {
+    ssize_t operator()(int fd, char* buf, size_t count) const {
+        return ::read(fd, buf, count);
+    }
+};
+
+struct DefaultWrite {
+    ssize_t operator()(int fd, const char* buf, size_t count) const {
+        return ::write(fd, buf, count);
+    }
+};
+
+// Default stop conditions
+struct SingleShot {
+    bool operator()(std::span<const char>, size_t) const {
+        return false;  // Always done after one I/O
+    }
+};
+
+struct UntilFull {
+    bool operator()(std::span<const char> buffer, size_t offset) const {
+        return offset < buffer.size();  // Continue until buffer full
+    }
+};
+
+template<char Delimiter>
+struct UntilDelimiter {
+    bool operator()(std::span<const char> buffer, size_t offset) const {
+        if (offset == 0) return true;  // Need at least one byte
+        return buffer[offset - 1] != Delimiter;  // Stop when delimiter found
+    }
+};
+
 // Generic async I/O operation
 // Mode: Reactor::FdMode::Read or Reactor::FdMode::Write
-// LoopUntilComplete: if false (default), does one I/O; if true, loops until all bytes transferred
-template<Reactor::FdMode Mode, bool LoopUntilComplete = false>
+// StopCondition: Determines when to stop (returns true = need more data)
+// IoFunc: I/O function (defaults to ::read or ::write based on Mode)
+template<Reactor::FdMode Mode,
+         typename StopCondition = SingleShot,
+         typename IoFunc = std::conditional_t<Mode == Reactor::FdMode::Read, DefaultRead, DefaultWrite>>
 struct AsyncBuffer {
     using CharType = std::conditional_t<Mode == Reactor::FdMode::Read, char, const char>;
     
     Reactor& reactor;
     int fd;
     std::span<CharType> buffer;
+    [[no_unique_address]] StopCondition stop_condition;
+    [[no_unique_address]] IoFunc io_func;
     
+    // Constructor for default I/O and stop condition
     AsyncBuffer(Reactor& r, int f, std::span<CharType> b)
-        : reactor(r), fd(f), buffer(b) {}
+        requires (std::is_default_constructible_v<IoFunc> && 
+                  std::is_default_constructible_v<StopCondition>)
+        : reactor(r), fd(f), buffer(b), stop_condition{}, io_func{} {}
+    
+    // Constructor for custom stop condition, default I/O
+    AsyncBuffer(Reactor& r, int f, std::span<CharType> b, StopCondition sc)
+        requires std::is_default_constructible_v<IoFunc>
+        : reactor(r), fd(f), buffer(b), stop_condition(sc), io_func{} {}
+    
+    // Constructor for custom I/O and stop condition
+    AsyncBuffer(Reactor& r, int f, std::span<CharType> b, StopCondition sc, IoFunc func)
+        : reactor(r), fd(f), buffer(b), stop_condition(sc), io_func(func) {}
     
     bool await_ready() { return false; }
     
@@ -35,7 +86,7 @@ struct AsyncBuffer {
 
 private:
     void wait_and_io() {
-        if (offset >= buffer.size()) {
+        if (!needs_more_data()) {
             handle.resume();
             return;
         }
@@ -73,11 +124,7 @@ private:
     }
     
     ssize_t do_io() {
-        if constexpr (Mode == Reactor::FdMode::Read) {
-            return ::read(fd, buffer.data() + offset, buffer.size() - offset);
-        } else {
-            return ::write(fd, buffer.data() + offset, buffer.size() - offset);
-        }
+        return io_func(fd, buffer.data() + offset, buffer.size() - offset);
     }
     
     bool should_retry(ssize_t n) const {
@@ -89,11 +136,8 @@ private:
     }
     
     bool needs_more_data() const {
-        if constexpr (LoopUntilComplete) {
-            return offset < buffer.size();
-        } else {
-            return false;
-        }
+        // Pass full buffer, not just filled portion
+        return stop_condition(buffer, offset);
     }
     
     std::coroutine_handle<> handle;
@@ -101,8 +145,17 @@ private:
 };
 
 // Convenient aliases
-template<bool Loop = false>
-using AsyncReadBuffer = AsyncBuffer<Reactor::FdMode::Read, Loop>;
+template<typename IoFunc = DefaultRead>
+using AsyncReadBuffer = AsyncBuffer<Reactor::FdMode::Read, SingleShot, IoFunc>;
 
-template<bool Loop = false>
-using AsyncWriteBuffer = AsyncBuffer<Reactor::FdMode::Write, Loop>;
+template<typename IoFunc = DefaultWrite>
+using AsyncWriteBuffer = AsyncBuffer<Reactor::FdMode::Write, SingleShot, IoFunc>;
+
+template<typename IoFunc = DefaultRead>
+using AsyncReadExact = AsyncBuffer<Reactor::FdMode::Read, UntilFull, IoFunc>;
+
+template<typename IoFunc = DefaultWrite>
+using AsyncWriteExact = AsyncBuffer<Reactor::FdMode::Write, UntilFull, IoFunc>;
+
+template<char Delimiter, typename IoFunc = DefaultRead>
+using AsyncReadUntil = AsyncBuffer<Reactor::FdMode::Read, UntilDelimiter<Delimiter>, IoFunc>;
