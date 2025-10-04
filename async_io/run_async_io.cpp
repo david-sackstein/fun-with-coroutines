@@ -1,17 +1,18 @@
 #include "Selector.h"
 #include "AsyncRead.h"
-#include "CoroutineObject.h"
+#include "AsyncIoCoroutine.h"
 
 #include <unistd.h>
 #include <iostream>
 #include <string>
+#include <thread>
 
-CoroutineObject read_lines(Selector& selector) {
+using namespace std::chrono_literals;
+
+AsyncIoCoroutine read_lines(Selector& selector) {
     std::cout << "Starting coroutine-based I/O..." << std::endl;
 
-    for (int i = 0; i < 3; ++i) {
-        std::cout << "\nWaiting for input (iteration " << (i + 1) << ")..." << std::endl;
-        
+    while(true) {
         // Wait for stdin to be readable (control returns to select here)
         co_await AsyncRead{selector, STDIN_FILENO};
         
@@ -19,10 +20,8 @@ CoroutineObject read_lines(Selector& selector) {
         std::string line;
         std::getline(std::cin, line);
         std::cout << "Read line: " << line << std::endl;
+        break;
     }
-    
-    std::cout << "\nDone reading, stopping selector" << std::endl;
-    selector.stop();
 }
 
 void run_async_io(){
@@ -31,8 +30,17 @@ void run_async_io(){
     // Start the coroutine - it will suspend at each co_await
     auto task = read_lines(selector);
     
+    // Demonstrate external stop: background thread cancels after delay
+    std::thread stopper([&] {
+        std::this_thread::sleep_for(2s);
+        selector.stop();
+        std::cout << "[stopper] stop requested" << std::endl;
+    });
+    
     // Run the event loop - it will dispatch I/O events
     selector.run();
+    
+    stopper.join();
     
     std::cout << "Selector stopped cleanly" << std::endl;
 }
