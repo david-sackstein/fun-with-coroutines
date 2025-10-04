@@ -1,7 +1,7 @@
 #pragma once
 
 #include "async/AsyncIoCoroutine.h"
-#include <string>
+#include <span>
 
 class Reactor;
 
@@ -16,5 +16,8 @@ private:
     int _stdin_fd;
     int _write_fd;
     int _read_fd;
+    
+    void log_input(std::span<const char> data);
+    void log_write_result(size_t bytes_written);
+    bool verify_and_log_echo(std::span<const char> sent, std::span<const char> received);
 };
-

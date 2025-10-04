@@ -14,7 +14,7 @@ AsyncIoCoroutine EchoClient::run() {
     char read_buffer[256];
     
     while (true) {
-        // Read from stdin until newline (using stop condition!)
+        // Read from stdin until newline
         std::cout << "[Client] Waiting for input..." << std::endl;
         size_t total = co_await AsyncReadUntil<'\n'>{_reactor, _stdin_fd, write_buffer};
         
@@ -24,10 +24,9 @@ AsyncIoCoroutine EchoClient::run() {
             co_return;
         }
         
-        std::string_view input(write_buffer, total);
-        std::cout << "[Client] Read from stdin: " << input;
+        log_input(std::span<const char>(write_buffer, total));
         
-        // Write EXACTLY total bytes to pipe1 (loop until all written)
+        // Write to pipe1
         size_t written = co_await AsyncWriteExact<>{_reactor, _write_fd,
                                                      std::span<const char>(write_buffer, total)};
         
@@ -36,9 +35,9 @@ AsyncIoCoroutine EchoClient::run() {
             std::cout << "  Expected " << total << " bytes, wrote " << written << " bytes" << std::endl;
             break;
         }
-        std::cout << "[Client] Wrote " << written << " bytes to pipe1" << std::endl;
+        log_write_result(written);
         
-        // Read EXACTLY total bytes from pipe2 (loop until all read)
+        // Read from pipe2
         size_t echoed = co_await AsyncReadExact<>{_reactor, _read_fd,
                                                    std::span<char>(read_buffer, total)};
         
@@ -48,12 +47,9 @@ AsyncIoCoroutine EchoClient::run() {
             break;
         }
         
-        // Verify echo matches
-        if (std::memcmp(write_buffer, read_buffer, total) == 0) {
-            std::string_view echo(read_buffer, total);
-            std::cout << "[Client] Read from pipe2: " << echo;
-            std::cout << "[Client] ✓ Echo verified successfully!" << std::endl;
-        } else {
+        // Verify echo
+        if (!verify_and_log_echo(std::span<const char>(write_buffer, total),
+                                 std::span<const char>(read_buffer, echoed))) {
             std::cout << "[Client] ✗ ERROR: Echo mismatch!" << std::endl;
             break;
         }
@@ -61,4 +57,23 @@ AsyncIoCoroutine EchoClient::run() {
     
     std::cout << "[Client] Stopping reactor" << std::endl;
     _reactor.stop();
+}
+
+void EchoClient::log_input(std::span<const char> data) {
+    std::string_view input(data.data(), data.size());
+    std::cout << "[Client] Read from stdin: " << input;
+}
+
+void EchoClient::log_write_result(size_t bytes_written) {
+    std::cout << "[Client] Wrote " << bytes_written << " bytes to pipe1" << std::endl;
+}
+
+bool EchoClient::verify_and_log_echo(std::span<const char> sent, std::span<const char> received) {
+    if (std::memcmp(sent.data(), received.data(), sent.size()) == 0) {
+        std::string_view echo(received.data(), received.size());
+        std::cout << "[Client] Read from pipe2: " << echo;
+        std::cout << "[Client] ✓ Echo verified successfully!" << std::endl;
+        return true;
+    }
+    return false;
 }

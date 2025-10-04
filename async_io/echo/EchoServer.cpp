@@ -12,7 +12,7 @@ AsyncIoCoroutine EchoServer::run() {
     char buffer[256];
     
     while (true) {
-        // Read until newline (using stop condition!)
+        // Read from pipe1 until newline
         size_t total = co_await AsyncReadUntil<'\n'>{_reactor, _read_fd, buffer};
         
         if (total == 0) {
@@ -20,10 +20,9 @@ AsyncIoCoroutine EchoServer::run() {
             co_return;
         }
         
-        std::string_view data(buffer, total);
-        std::cout << "[Server] Received: " << data;
+        log_received_message(std::span<const char>(buffer, total));
         
-        // Echo EXACTLY total bytes to pipe2 (loop until all written)
+        // Echo to pipe2
         size_t written = co_await AsyncWriteExact<>{_reactor, _write_fd,
                                                      std::span<const char>(buffer, total)};
         
@@ -33,8 +32,17 @@ AsyncIoCoroutine EchoServer::run() {
             break;
         }
         
-        std::cout << "[Server] Echoed " << written << " bytes to pipe2" << std::endl;
+        log_echo_result(written);
     }
     
     std::cout << "[Server] Finished" << std::endl;
+}
+
+void EchoServer::log_received_message(std::span<const char> data) {
+    std::string_view message(data.data(), data.size());
+    std::cout << "[Server] Received: " << message;
+}
+
+void EchoServer::log_echo_result(size_t bytes_written) {
+    std::cout << "[Server] Echoed " << bytes_written << " bytes to pipe2" << std::endl;
 }
