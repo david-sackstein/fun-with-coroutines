@@ -1,7 +1,8 @@
 #include "EchoClient.h"
 #include "reactor/Reactor.h"
 #include "async/AsyncReadBuffer.h"
-#include "async/AsyncWriteBuffer.h"
+#include "async/AsyncWriteExact.h"
+#include "async/AsyncReadExact.h"
 #include <iostream>
 #include <cstring>
 
@@ -15,7 +16,7 @@ AsyncIoCoroutine EchoClient::run() {
     char read_buffer[256];
     
     while (true) {
-        // Read from stdin
+        // Read from stdin (single read - we don't know size in advance)
         std::cout << "[Client] Waiting for input..." << std::endl;
         ssize_t n = co_await AsyncReadBuffer{_reactor, _stdin_fd, write_buffer};
         
@@ -27,32 +28,38 @@ AsyncIoCoroutine EchoClient::run() {
         std::string_view input(write_buffer, n);
         std::cout << "[Client] Read from stdin: " << input;
         
-        // Write to pipe1
-        ssize_t written = co_await f{_reactor, _write_fd,
-                                                     std::span<const char>(write_buffer, n)};
+        // Write EXACTLY n bytes to pipe1 (loop until all written)
+        size_t written = co_await AsyncWriteExact{_reactor, _write_fd, 
+                                                   std::span<const char>(write_buffer, n)};
+        
+        if (written < static_cast<size_t>(n)) {
+            std::cout << "[Client] ✗ ERROR: Failed to write all bytes to pipe1!" << std::endl;
+            std::cout << "  Expected " << n << " bytes, wrote " << written << " bytes" << std::endl;
+            break;
+        }
         std::cout << "[Client] Wrote " << written << " bytes to pipe1" << std::endl;
         
-        // Read from pipe2
-        ssize_t echoed = co_await AsyncReadBuffer{_reactor, _read_fd, read_buffer};
+        // Read EXACTLY n bytes from pipe2 (loop until all read)
+        size_t echoed = co_await AsyncReadExact{_reactor, _read_fd, 
+                                                 std::span<char>(read_buffer, n)};
         
-        if (echoed <= 0) {
-            std::cout << "[Client] EOF on pipe2" << std::endl;
+        if (echoed < static_cast<size_t>(n)) {
+            std::cout << "[Client] ✗ ERROR: Failed to read all bytes from pipe2!" << std::endl;
+            std::cout << "  Expected " << n << " bytes, got " << echoed << " bytes" << std::endl;
             break;
         }
         
         std::string_view echo(read_buffer, echoed);
         std::cout << "[Client] Read from pipe2: " << echo;
         
-        // Verify
-        if (echoed == n && std::memcmp(write_buffer, read_buffer, n) == 0) {
+        // Verify (now guaranteed to have correct lengths)
+        if (std::memcmp(write_buffer, read_buffer, n) == 0) {
             std::cout << "[Client] ✓ Echo verified successfully!" << std::endl;
         } else {
-            std::cout << "[Client] ✗ ERROR: Echo mismatch!" << std::endl;
-            std::cout << "  Expected " << n << " bytes, got " << echoed << " bytes" << std::endl;
+            std::cout << "[Client] ✗ ERROR: Echo content mismatch!" << std::endl;
         }
     }
     
     std::cout << "[Client] Stopping reactor" << std::endl;
     _reactor.stop();
 }
-
