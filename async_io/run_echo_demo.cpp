@@ -22,7 +22,7 @@ void run_echo_demo() {
     Pipe pipe1;  // Client writes, Server reads
     Pipe pipe2;  // Server writes, Client reads
     
-    // Create reactor
+    // Create _reactor
     Reactor reactor;
     
     // Create and start client and server coroutines
@@ -35,11 +35,11 @@ void run_echo_demo() {
     // Demonstrate external stop: background thread cancels after delay
     std::thread stopper([&] {
         std::this_thread::sleep_for(10s);
-        std::cout << "\n[Stopper] Timeout - stopping reactor" << std::endl;
+        std::cout << "\n[Stopper] Timeout - stopping _reactor" << std::endl;
         reactor.stop();
     });
     
-    // Run the reactor
+    // Run the _reactor
     reactor.run();
     
     stopper.join();

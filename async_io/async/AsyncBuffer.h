@@ -58,23 +58,26 @@ template<Reactor::FdMode Mode,
 struct AsyncBuffer {
     using CharType = std::conditional_t<Mode == Reactor::FdMode::Read, char, const char>;
 
-    Reactor& reactor;
-    int fd;
-    std::span<CharType> buffer;
+    Reactor& _reactor;
+    int _fd;
+    std::span<CharType> _buffer;
+    std::coroutine_handle<> handle;
+    size_t offset = 0;
+
     [[no_unique_address]] StopCondition stop_condition{};
     [[no_unique_address]] IoFunc io_func{};
 
     // Constructor using default stop_condition and io_func
-    AsyncBuffer(Reactor& r, int f, std::span<CharType> b)
-        : reactor(r), fd(f), buffer(b) {}
+    AsyncBuffer(Reactor& reactor, int fd, std::span<CharType> buffer)
+        : _reactor(reactor), _fd(fd), _buffer(buffer) {}
 
     // Constructor for custom stop_condition
-    AsyncBuffer(Reactor& r, int f, std::span<CharType> b, StopCondition sc)
-        : reactor(r), fd(f), buffer(b), stop_condition(sc) {}
+    AsyncBuffer(Reactor& reactor, int fd, std::span<CharType> buffer, StopCondition sc)
+        : _reactor(reactor), _fd(fd), _buffer(buffer), stop_condition(sc) {}
 
     // Constructor for custom stop_condition and io_func
-    AsyncBuffer(Reactor& r, int f, std::span<CharType> b, StopCondition sc, IoFunc func)
-        : reactor(r), fd(f), buffer(b), stop_condition(sc), io_func(func) {}
+    AsyncBuffer(Reactor& reactor, int fd, std::span<CharType> buffer, StopCondition sc, IoFunc func)
+        : _reactor(reactor), _fd(fd), _buffer(buffer), stop_condition(sc), io_func(func) {}
 
     bool await_ready() { return false; }
 
@@ -98,8 +101,8 @@ private:
     }
 
     void post_io() {
-        reactor.post(fd, Mode, [this](int) {
-            reactor.remove(fd, Mode);
+        _reactor.post(_fd, Mode, [this](int) {
+            _reactor.remove(_fd, Mode);
             perform_io();
         });
     }
@@ -127,7 +130,7 @@ private:
     }
 
     ssize_t do_io() {
-        return io_func(fd, buffer.data() + offset, buffer.size() - offset);
+        return io_func(_fd, _buffer.data() + offset, _buffer.size() - offset);
     }
 
     bool should_retry(ssize_t n) const {
@@ -139,11 +142,8 @@ private:
     }
 
     bool needs_more_data() const {
-        return stop_condition(buffer, offset);
+        return stop_condition(_buffer, offset);
     }
-
-    std::coroutine_handle<> handle;
-    size_t offset = 0;
 };
 
 // Convenient aliases
