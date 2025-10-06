@@ -11,14 +11,21 @@ endif()
 
 add_executable(fun_with_coroutines
     main.cpp
-    run_generator.cpp
-    async_tasks/event_loop/EventLoop.cpp
-    run_async_tasks.cpp
-    run_echo_demo.cpp
-    async_io/reactor/Reactor.cpp
-    async_io/echo/Pipe.cpp
-    async_io/echo/EchoClient.cpp
-    async_io/echo/EchoServer.cpp
+    common/reactor/Reactor.cpp
+    common/event_loop/EventLoop.cpp
+    coroutines/async_io/echo/EchoClient.cpp
+    coroutines/async_io/echo/EchoServer.cpp
+    common/pipe/Pipe.cpp
+    coroutines/run_async_tasks_over_event_loop.cpp
+    coroutines/run_echo_over_reactor.cpp
+    coroutines/run_generator.cpp
+    no-coroutines/async_io/echo/EchoClient.cpp
+    no-coroutines/async_io/echo/EchoServer.cpp
+    no-coroutines/run_echo_over_reactor.cpp
+    no-coroutines/run_async_tasks_over_event_loop.cpp
+    no-coroutines/run_generator.cpp
+    no-coroutines/samples.h
+    no-coroutines/async_tasks/AsyncTaskRunner.h
 )
 
 target_include_directories(fun_with_coroutines PRIVATE .)

@@ -1,9 +1,11 @@
-#include "EchoClient.h"
-#include "async_io/reactor/WorkGuard.h"
-#include "async_io/async/AsyncIo.h"
+#include "coroutines/async_io/echo/EchoClient.h"
+#include "common/reactor/WorkGuard.h"
+#include "coroutines/async_io/async/AsyncIo.h"
 
 #include <print>
 #include <stdexcept>
+
+namespace coroutines {
 
 EchoClient::EchoClient(Reactor &reactor, int stdin_fd, int write_fd, int read_fd)
     : _reactor(reactor), _stdin_fd(stdin_fd), _write_fd(write_fd), _read_fd(read_fd) {}
@@ -70,4 +72,6 @@ void EchoClient::verify_and_log_echo(const char *sent, size_t sent_size,
     }
     std::print("[Client] Read from pipe_server_to_client: {}", std::string_view(received, received_size));
     std::print("[Client] ✓ Echo verified successfully!\n");
+}
+
 }

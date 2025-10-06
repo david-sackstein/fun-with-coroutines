@@ -1,7 +1,9 @@
 #pragma once
 
-#include "async_io/async/AsyncIoCoroutine.h"
-#include "async_io/reactor/Reactor.h"
+#include "coroutines/async_io/async/AsyncIoCoroutine.h"
+#include "common/reactor/Reactor.h"
+
+namespace coroutines {
 
 class EchoServer {
 public:
@@ -17,3 +19,5 @@ private:
     void log_received_message(const char *data, size_t size);
     void verify_write_complete(size_t expected, size_t actual);
 };
+
+}

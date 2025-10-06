@@ -1,7 +1,9 @@
 #pragma once
 
-#include "async_io/async/AsyncIoCoroutine.h"
-#include "async_io/reactor/Reactor.h"
+#include "coroutines/async_io/async/AsyncIoCoroutine.h"
+#include "common/reactor/Reactor.h"
+
+namespace coroutines {
 
 class EchoClient {
 public:
@@ -21,3 +23,5 @@ private:
     void verify_and_log_echo(const char *sent, size_t sent_size, 
                              const char *received, size_t received_size);
 };
+
+}

@@ -1,9 +1,11 @@
-#include "EchoServer.h"
-#include "async_io/reactor/WorkGuard.h"
-#include "async_io/async/AsyncIo.h"
+#include "coroutines/async_io/echo/EchoServer.h"
+#include "common/reactor/WorkGuard.h"
+#include "coroutines/async_io/async/AsyncIo.h"
 
 #include <print>
 #include <stdexcept>
+
+namespace coroutines {
 
 EchoServer::EchoServer(Reactor &reactor, int read_fd, int write_fd)
     : _reactor(reactor), _read_fd(read_fd), _write_fd(write_fd) {}
@@ -43,4 +45,6 @@ void EchoServer::verify_write_complete(size_t expected, size_t actual) {
             actual));
     }
     std::print("[Server] Echoed {} bytes to pipe_server_to_client\n", actual);
+}
+
 }
