@@ -40,6 +40,21 @@ void Reactor::remove(int fd, FdMode mode) {
     _interrupt.notify();
 }
 
+void Reactor::add_work() noexcept {
+    std::lock_guard<std::mutex> lock(_mtx);
+    if (!_running) {
+        return;  // Don't add work if reactor is stopping
+    }
+    ++_work_count;
+}
+
+void Reactor::remove_work() noexcept {
+    std::lock_guard<std::mutex> lock(_mtx);
+    if (--_work_count == 0) {
+        stop();
+    }
+}
+
 auto Reactor::handlers_for(FdMode mode) -> HandlerMap& {
     return mode == FdMode::Read ? _read_handlers : _write_handlers;
 }

@@ -26,20 +26,8 @@ public:
 private:
     friend class WorkGuard;
 
-    void add_work() noexcept {
-        std::lock_guard<std::mutex> lock(_mtx);
-        if (!_running) {
-            return;  // Don't add work if reactor is stopping
-        }
-        ++_work_count;
-    }
-    
-    void remove_work() noexcept {
-        std::lock_guard<std::mutex> lock(_mtx);
-        if (--_work_count == 0) {
-            stop();
-        }
-    }
+    void add_work() noexcept;
+    void remove_work() noexcept;
 
     HandlerMap& handlers_for(FdMode mode);
     std::vector<int> fds_for(FdMode mode);

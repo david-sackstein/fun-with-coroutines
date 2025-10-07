@@ -24,19 +24,19 @@ namespace coroutines {
 // ============================================================================
 
     struct SingleShot {
-        bool operator()(std::span<const char>, size_t) const { return false; }
+        bool operator()(std::span<const char>, size_t) const { return true; }
     };
 
     struct UntilFull {
         bool operator()(std::span<const char> buffer, size_t offset) const {
-            return offset < buffer.size();
+            return offset == buffer.size();
         }
     };
 
     template<char Delimiter>
     struct UntilDelimiter {
         bool operator()(std::span<const char> buffer, size_t offset) const {
-            return offset == 0 || buffer[offset - 1] != Delimiter;
+            return offset != 0 && buffer[offset - 1] == Delimiter;
         }
     };
 

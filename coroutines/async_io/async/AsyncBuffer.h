@@ -31,7 +31,13 @@ namespace coroutines {
         void await_suspend(std::coroutine_handle<> handle) {
             _handle = handle;
             _offset = 0;
-            wait_and_io();
+
+            if (is_done()) {
+                _handle.resume();
+                return;
+            }
+
+            post_perform_io();
         }
 
         size_t await_resume() {
@@ -39,17 +45,8 @@ namespace coroutines {
         }
 
     private:
-        void wait_and_io() {
-            if (!needs_more_data()) {
-                _handle.resume();
-                return;
-            }
-            post_io();
-        }
-
-        void post_io() {
+        void post_perform_io() {
             _reactor.post(_fd, Mode, [this](int) {
-                _reactor.remove(_fd, Mode);
                 perform_io();
             });
         }
@@ -58,31 +55,34 @@ namespace coroutines {
             ssize_t n = IoFunc{}(_fd, _buffer.data() + _offset, _buffer.size() - _offset);
 
             if (should_retry(n)) {
-                post_io();
+                // Stay registered, reactor will notify again when ready
                 return;
             }
 
-            // Stop immediately on EOF or real error
             if (n <= 0) {
-                _handle.resume();
+                // Stop immediately on EOF or real error
+                remove_and_resume();
                 return;
             }
 
             // Success: n > 0
             _offset += n;
 
-            if (needs_more_data()) {
-                post_io();
-            } else {
-                _handle.resume();
+            if (is_done()) {
+                remove_and_resume();
             }
+        }
+
+        void remove_and_resume() {
+            _reactor.remove(_fd, Mode);
+            _handle.resume();
         }
 
         bool should_retry(ssize_t n) const {
             return n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
         }
 
-        bool needs_more_data() const {
+        bool is_done() const {
             return StopCondition{}(_buffer, _offset);
         }
     };
