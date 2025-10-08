@@ -1,4 +1,4 @@
-#include "no-coroutines/async_tasks_2/AsyncTaskRunner2.h"
+#include "no-coroutines/2. async_tasks/AsyncTaskRunner.h"
 
 #include <print>
 #include <thread>
@@ -7,7 +7,7 @@ namespace no_coroutines {
 
 using namespace std::chrono_literals;
 
-void my_task_2() {
+static void my_task() {
     auto runner = std::make_shared<AsyncTaskRunner2>();
 
     std::print("From thread {}\n", std::this_thread::get_id());
@@ -26,8 +26,8 @@ void my_task_2() {
     });
 }
 
-void run_async_tasks_2() {
-    my_task_2();
+void run_async_tasks() {
+    my_task();
     
     // Sleep to keep main thread alive while async tasks complete
     std::this_thread::sleep_for(5s);

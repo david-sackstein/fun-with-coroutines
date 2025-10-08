@@ -1,25 +1,24 @@
-#include "common/reactor/Reactor.h"
+#include "coroutines/4. async_io/echo/EchoClient.h"
+#include "coroutines/4. async_io/echo/EchoServer.h"
+
 #include "common/pipe/Pipe.h"
-#include "no-coroutines/async_io/echo/EchoClient.h"
-#include "no-coroutines/async_io/echo/EchoServer.h"
 
 #include <print>
-#include <unistd.h>
 #include <fcntl.h>
 #include <thread>
 #include <stdexcept>
 
-namespace no_coroutines {
+namespace coroutines {
 
 using namespace std::chrono_literals;
 
 void setup_stdin();
 std::thread start_stopper_thread(Reactor &reactor);
 
-void run_echo_over_reactor() {
+void run_async_io() {
     std::print("=== Echo Server Demo ===\n");
     std::print("Type messages (ending with newline), they will be echoed through pipes\n");
-    std::print("Press Ctrl+D to exit (or wait 10s for timeout)\n\n");
+    std::print("Press Ctrl+D to exit (or wait 30s for timeout)\n\n");
 
     setup_stdin();
     
@@ -30,18 +29,18 @@ void run_echo_over_reactor() {
     // Create reactor
     Reactor reactor;
     
-    // Create and start client and server
+    // Create and start client and server coroutines
     EchoClient client(reactor, STDIN_FILENO, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd());
     EchoServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
     
-    client.run();
-    server.run();
+    auto client_task = client.run();
+    auto server_task = server.run();
     
     // Start timeout thread (detached - just a safety net)
     std::thread stopper = start_stopper_thread(reactor);
     stopper.detach();
     
-    // Run the reactor and catch any exceptions
+    // Run the reactor and catch any exceptions from coroutines
     try {
         reactor.run();
     } catch (const std::exception &e) {

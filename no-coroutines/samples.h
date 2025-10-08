@@ -2,9 +2,9 @@
 
 namespace no_coroutines {
     void run_generator();
-    void run_async_tasks_2();
-    void run_async_tasks_over_event_loop();
-    void run_echo_over_reactor();
+    void run_async_tasks();
+    void run_async_tasks_marshalled();
+    void run_async_io();
 }
 
 using namespace no_coroutines;

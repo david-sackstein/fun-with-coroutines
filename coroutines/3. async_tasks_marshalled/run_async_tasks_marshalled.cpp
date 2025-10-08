@@ -1,6 +1,7 @@
+#include "coroutines/3. async_tasks_marshalled/CoroutineObject.h"
+#include "coroutines/3. async_tasks_marshalled/AsyncTaskMarshalled.h"
+
 #include "common/event_loop/EventLoop.h"
-#include "coroutines/async_tasks/CoroutineObject.h"
-#include "coroutines/async_tasks/AsyncTask.h"
 
 #include <print>
 
@@ -14,19 +15,19 @@ CoroutineObject my_task(EventLoop &loop) {
     std::print("From thread {}\n", std::this_thread::get_id());
 
     std::print("Step 1\n");
-    co_await AsyncTask{loop};
+    co_await AsyncTaskMarshalled{loop};
 
     std::print("From thread {}\n", std::this_thread::get_id());
 
     std::print("Step 2\n");
-    co_await AsyncTask{loop};
+    co_await AsyncTaskMarshalled{loop};
 
     std::print("From thread {}\n", std::this_thread::get_id());
 
     std::print("Step 3\n");
 }
 
-void run_async_tasks_over_event_loop() {
+void run_async_tasks_marshalled() {
 
     auto t = my_task(g_loop);
 

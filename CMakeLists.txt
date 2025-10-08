@@ -13,21 +13,21 @@ add_executable(fun_with_coroutines
     main.cpp
     common/reactor/Reactor.cpp
     common/event_loop/EventLoop.cpp
-    coroutines/async_io/echo/EchoClient.cpp
-    coroutines/async_io/echo/EchoServer.cpp
+    "coroutines/4. async_io/echo/EchoClient.cpp"
+    "coroutines/4. async_io/echo/EchoServer.cpp"
     common/pipe/Pipe.cpp
-    coroutines/run_async_tasks_over_event_loop.cpp
-    coroutines/run_echo_over_reactor.cpp
-    coroutines/run_generator.cpp
-    coroutines/run_async_tasks.cpp
-    no-coroutines/async_io/echo/EchoClient.cpp
-    no-coroutines/async_io/echo/EchoServer.cpp
-    no-coroutines/run_echo_over_reactor.cpp
-    no-coroutines/run_async_tasks_over_event_loop.cpp
-    no-coroutines/run_generator.cpp
-    no-coroutines/run_async_tasks.cpp
+    "coroutines/3. async_tasks_marshalled/run_async_tasks_marshalled.cpp"
+    "coroutines/4. async_io/run_async_io.cpp"
+    "coroutines/1. generator/run_generator.cpp"
+    "coroutines/2. async_tasks/run_async_tasks.cpp"
+    "no-coroutines/4. async_io/echo/EchoClient.cpp"
+    "no-coroutines/4. async_io/echo/EchoServer.cpp"
+    "no-coroutines/4. async_io/run_async_io.cpp"
+    "no-coroutines/3. async_tasks_marshalled/run_async_tasks_marshalled.cpp"
+    "no-coroutines/1. generator/run_generator.cpp"
+    "no-coroutines/2. async_tasks/run_async_tasks.cpp"
     no-coroutines/samples.h
-    no-coroutines/async_tasks/AsyncTaskRunner.h
+    "no-coroutines/3. async_tasks_marshalled/AsyncTaskRunnerMarshalled.h"
 )
 
 target_include_directories(fun_with_coroutines PRIVATE .)

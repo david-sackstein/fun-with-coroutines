@@ -7,7 +7,7 @@
 using namespace std::chrono_literals;
 
 namespace coroutines {
-    struct AsyncTask {
+    struct AsyncTaskMarshalled {
         EventLoop &loop;
 
         bool await_ready() { return false; }

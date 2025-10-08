@@ -1,10 +1,11 @@
-#include "no-coroutines/generator/Generator.h"
-#include <print>
+#include "coroutines/1. generator/Generator.h"
 
-namespace no_coroutines {
+namespace coroutines {
 
 Generator createGenerator(int count) {
-    return Generator(count);
+    for (int i=0; i<count; i++) {
+        co_yield i;
+    }
 }
 
 void run_generator() {

@@ -6,7 +6,7 @@
 using namespace std::chrono_literals;
 
 namespace coroutines {
-    struct AsyncTask2 {
+    struct AsyncTask {
         bool await_ready() { return false; }
 
         void await_suspend(std::coroutine_handle<> h) {
