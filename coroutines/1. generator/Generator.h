@@ -2,6 +2,7 @@
 
 #include <coroutine>
 #include <print>
+#include "common/generator/Iterator.h"
 
 namespace coroutines {
     struct Generator {
@@ -52,4 +53,13 @@ namespace coroutines {
 
         std::coroutine_handle<promise_type> _handle;
     };
+
+    // Enable range-based for loop via ADL
+    inline GeneratorIterator<Generator> begin(Generator& generator) {
+        return GeneratorIterator<Generator>(generator);
+    }
+
+    inline GeneratorIterator<Generator> end(Generator& generator) {
+        return GeneratorIterator<Generator>();
+    }
 }

@@ -9,13 +9,14 @@ Generator createGenerator(int count) {
 }
 
 void run_generator() {
+    // Using range-based for loop with iterator
     auto generator = createGenerator(10);
-    while (generator.next()){
-        int value = generator.get_current_value();
+    for (int value : generator) {
         std::print("{}\n", value);
     }
-    while (generator.next()){
-        int value = generator.get_current_value();
+    
+    // Second loop - generator is already exhausted, so nothing prints
+    for (int value : generator) {
         std::print("{}\n", value);
     }
 }

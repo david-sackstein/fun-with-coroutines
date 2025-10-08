@@ -1,6 +1,7 @@
 #pragma once
 
 #include <print>
+#include "common/generator/Iterator.h"
 
 namespace no_coroutines {
     class Generator {
@@ -25,4 +26,13 @@ namespace no_coroutines {
         int _current_index;
         int _current_value;
     };
+
+    // Enable range-based for loop via ADL
+    inline GeneratorIterator<Generator> begin(Generator& generator) {
+        return GeneratorIterator<Generator>(generator);
+    }
+
+    inline GeneratorIterator<Generator> end(Generator& generator) {
+        return GeneratorIterator<Generator>();
+    }
 }
