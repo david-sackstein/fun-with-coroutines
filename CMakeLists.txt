@@ -19,11 +19,13 @@ add_executable(fun_with_coroutines
     coroutines/run_async_tasks_over_event_loop.cpp
     coroutines/run_echo_over_reactor.cpp
     coroutines/run_generator.cpp
+    coroutines/run_async_tasks.cpp
     no-coroutines/async_io/echo/EchoClient.cpp
     no-coroutines/async_io/echo/EchoServer.cpp
     no-coroutines/run_echo_over_reactor.cpp
     no-coroutines/run_async_tasks_over_event_loop.cpp
     no-coroutines/run_generator.cpp
+    no-coroutines/run_async_tasks.cpp
     no-coroutines/samples.h
     no-coroutines/async_tasks/AsyncTaskRunner.h
 )
