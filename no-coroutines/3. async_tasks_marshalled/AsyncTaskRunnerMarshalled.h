@@ -12,9 +12,9 @@ namespace no_coroutines {
     // Helper class to manage async task state without coroutines
     class AsyncTaskRunnerMarshalled {
     public:
-        AsyncTaskRunnerMarshalled(EventLoop& loop) : loop(loop), work_guard(loop) {}
+        explicit AsyncTaskRunnerMarshalled(EventLoop& loop) : loop(loop), work_guard(loop) {}
 
-        void run_async_operation(std::function<void()> continuation) {
+        void run_async_operation(const std::function<void()>& continuation) const {
             // Spawn a thread that sleeps for 1 second, then posts the continuation to the event loop
             std::thread t([continuation, &loop = this->loop] {
                 std::this_thread::sleep_for(1s);

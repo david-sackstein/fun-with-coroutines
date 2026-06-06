@@ -25,7 +25,7 @@ static CoroutineObject my_task() {
 }
 
 void run_async_tasks() {
-    auto t = my_task();
+    [[maybe_unused]] auto t = my_task();
     
     // Sleep to keep main thread alive while async tasks complete
     std::this_thread::sleep_for(5s);

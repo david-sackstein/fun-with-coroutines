@@ -81,7 +81,7 @@ void EchoServer::async_write_echo(size_t size) {
     
     std::function<void(int)> write_handler;
     write_handler = [this, offset, total, write_handler](int fd) mutable {
-        ssize_t n = ::write(fd, _buffer + *offset, *total - *offset);
+        const ssize_t n = ::write(fd, _buffer + *offset, *total - *offset);
         
         if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
             // Retry

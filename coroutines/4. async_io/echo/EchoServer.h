@@ -16,8 +16,8 @@ private:
     int _read_fd;
     int _write_fd;
     
-    void log_received_message(const char *data, size_t size);
-    void verify_write_complete(size_t expected, size_t actual);
+    static void log_received_message(const char *data, size_t size);
+    static void verify_write_complete(size_t expected, size_t actual);
 };
 
 }

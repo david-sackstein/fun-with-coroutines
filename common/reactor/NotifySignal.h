@@ -13,7 +13,7 @@ public:
     NotifySignal& operator=(const NotifySignal&) = delete;
 
     int arm() {
-        std::lock_guard<std::mutex> lock(_mtx);
+        std::lock_guard lock(_mtx);
         if (_pending) {
             _efd.read();
             _pending = false;
@@ -25,7 +25,7 @@ public:
         if (_pending) {
             return;
         }
-        std::lock_guard<std::mutex> lock(_mtx);
+        std::lock_guard lock(_mtx);
         _efd.write();
         _pending = true;
     }

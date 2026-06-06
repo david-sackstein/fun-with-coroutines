@@ -37,7 +37,8 @@ public:
         return *this;
     }
 
-    GeneratorIterator operator++(int) {
+    // NOLINTNEXTLINE(readability-const-return-type) -- cert-dcl21-cpp requires const postfix operator++ result
+    const GeneratorIterator operator++(int) {
         GeneratorIterator tmp = *this;
         advance();
         return tmp;

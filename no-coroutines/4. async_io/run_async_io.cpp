@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <thread>
-#include <stdexcept>
 
 namespace no_coroutines {
 

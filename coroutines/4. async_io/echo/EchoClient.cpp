@@ -2,6 +2,7 @@
 #include "coroutines/4. async_io/async/AsyncIo.h"
 #include "common/reactor/WorkGuard.h"
 
+#include <cstring>
 #include <print>
 #include <stdexcept>
 

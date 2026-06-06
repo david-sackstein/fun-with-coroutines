@@ -78,11 +78,11 @@ namespace coroutines {
             _handle.resume();
         }
 
-        bool should_retry(ssize_t n) const {
+        [[nodiscard]] bool should_retry(ssize_t n) const {
             return n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
         }
 
-        bool is_done() const {
+        [[nodiscard]] bool is_done() const {
             return StopCondition{}(_buffer, _offset);
         }
     };

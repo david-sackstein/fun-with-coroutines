@@ -20,7 +20,7 @@ private:
     
     std::unique_ptr<WorkGuard> _work_guard;
     
-    char _buffer[256];
+    char _buffer[256]{};
     
     // Async operation helpers
     void async_read_message();
@@ -30,8 +30,8 @@ private:
     void on_write_complete(size_t expected, size_t actual);
     
     // Utility methods
-    void log_received_message(const char *data, size_t size);
-    void verify_write_complete(size_t expected, size_t actual);
+    static void log_received_message(const char *data, size_t size);
+    static void verify_write_complete(size_t expected, size_t actual);
 };
 
 }

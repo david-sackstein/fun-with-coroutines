@@ -20,20 +20,19 @@ add_executable(fun_with_coroutines
 target_compile_features(fun_with_coroutines PRIVATE cxx_std_23)
 
 set_target_properties(fun_with_coroutines PROPERTIES
-        CXX_EXTENSIONS OFF
+    CXX_EXTENSIONS OFF
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(fun_with_coroutines PRIVATE
-            -fsanitize=address
-            -fno-omit-frame-pointer
-    )
+target_compile_options(fun_with_coroutines PRIVATE
+    -Werror
+    -fsanitize=address
+    -fno-omit-frame-pointer
+)
 
-    target_link_options(fun_with_coroutines PRIVATE
-            -fsanitize=address
-    )
-endif()
+target_link_options(fun_with_coroutines PRIVATE
+    -fsanitize=address
+)
 
 target_include_directories(fun_with_coroutines PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )

@@ -20,9 +20,9 @@ public:
     EventFd(const EventFd&) = delete;
     EventFd& operator=(const EventFd&) = delete;
 
-    int get() const { return _pipe[0]; } // read descriptor for select/poll
+    [[nodiscard]] int get() const { return _pipe[0]; } // read descriptor for select/poll
 
-    void write() {
+    void write() const {
         char b = 1;
         ssize_t n;
         // retry on EINTR
@@ -32,7 +32,7 @@ public:
         }
     }
 
-    void read() {
+    void read() const {
         char b;
         ssize_t n;
         // retry on EINTR
@@ -43,5 +43,5 @@ public:
     }
 
 private:
-    int _pipe[2];
+    int _pipe[2]{};
 };

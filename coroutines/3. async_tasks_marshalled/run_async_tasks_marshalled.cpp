@@ -29,7 +29,7 @@ CoroutineObject my_task(EventLoop &loop) {
 
 void run_async_tasks_marshalled() {
 
-    auto t = my_task(g_loop);
+    [[maybe_unused]] auto t = my_task(g_loop);
 
     g_loop.run();
 

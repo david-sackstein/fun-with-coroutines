@@ -12,6 +12,7 @@ namespace coroutines {
                 return Generator(std::coroutine_handle<promise_type>::from_promise(*this));
             }
 
+            // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
             std::suspend_always initial_suspend() { return {}; }
 
             std::suspend_always final_suspend() noexcept { return {}; }
@@ -19,6 +20,7 @@ namespace coroutines {
             void return_void() {}
 
             void unhandled_exception() {}
+            // NOLINTEND(readability-convert-member-functions-to-static)
 
             std::suspend_always yield_value(int value) {
                 current_value = value;
@@ -28,7 +30,7 @@ namespace coroutines {
             int current_value;
         };
 
-        Generator(std::coroutine_handle<promise_type> handle) :
+        explicit Generator(std::coroutine_handle<promise_type> handle) :
             _handle(handle) {
         }
 
@@ -38,6 +40,7 @@ namespace coroutines {
             }
         }
 
+        // NOLINTNEXTLINE(readability-make-member-function-const) -- resume() mutates coroutine state
         bool next() {
             if (_handle.done()) {
                 return false;
@@ -46,8 +49,8 @@ namespace coroutines {
             return !_handle.done();
         }
 
-        int get_current_value() {
-            auto &promise = _handle.promise();
+        [[nodiscard]] int get_current_value() const {
+            const auto &promise = _handle.promise();
             return promise.current_value;
         }
 
@@ -56,10 +59,10 @@ namespace coroutines {
 
     // Enable range-based for loop via ADL
     inline GeneratorIterator<Generator> begin(Generator& generator) {
-        return GeneratorIterator<Generator>(generator);
+        return GeneratorIterator(generator);
     }
 
-    inline GeneratorIterator<Generator> end(Generator& generator) {
-        return GeneratorIterator<Generator>();
+    inline GeneratorIterator<Generator> end(Generator&) {
+        return {};
     }
 }

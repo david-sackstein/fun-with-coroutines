@@ -6,7 +6,7 @@
 namespace no_coroutines {
     class Generator {
     public:
-        Generator(int count) : _count(count), _current_index(0), _current_value(0) {}
+        explicit Generator(int count) : _count(count), _current_index(0), _current_value(0) {}
 
         bool next() {
             if (_current_index >= _count) {
@@ -17,7 +17,7 @@ namespace no_coroutines {
             return true;
         }
 
-        int get_current_value() const {
+        [[nodiscard]] int get_current_value() const {
             return _current_value;
         }
 
@@ -29,10 +29,10 @@ namespace no_coroutines {
 
     // Enable range-based for loop via ADL
     inline GeneratorIterator<Generator> begin(Generator& generator) {
-        return GeneratorIterator<Generator>(generator);
+        return GeneratorIterator(generator);
     }
 
-    inline GeneratorIterator<Generator> end(Generator& generator) {
-        return GeneratorIterator<Generator>();
+    inline GeneratorIterator<Generator> end(Generator&) {
+        return {};
     }
 }

@@ -32,7 +32,7 @@ private:
     HandlerMap& handlers_for(FdMode mode);
     std::vector<int> fds_for(FdMode mode);
 
-    void wait_once(FdSet& readFdSet, FdSet& writeFdSet);
+    static void wait_once(FdSet& readFdSet, FdSet& writeFdSet);
 
     void dispatch_ready(const FdSet& readFdSet, const FdSet& writeFdSet);
     void dispatch_ready(FdMode mode, const FdSet& readySet);

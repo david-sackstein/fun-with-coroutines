@@ -34,14 +34,14 @@ void Reactor::post(int fd, FdMode mode, std::function<void(int)> handler) {
 
 void Reactor::remove(int fd, FdMode mode) {
     {
-        std::lock_guard<std::mutex> lock(_mtx);
+        std::lock_guard lock(_mtx);
         handlers_for(mode).erase(fd);
     }
     _interrupt.notify();
 }
 
 void Reactor::add_work() noexcept {
-    std::lock_guard<std::mutex> lock(_mtx);
+    std::lock_guard lock(_mtx);
     if (!_running) {
         return;  // Don't add work if reactor is stopping
     }
@@ -49,7 +49,7 @@ void Reactor::add_work() noexcept {
 }
 
 void Reactor::remove_work() noexcept {
-    std::lock_guard<std::mutex> lock(_mtx);
+    std::lock_guard lock(_mtx);
     if (--_work_count == 0) {
         stop();
     }
@@ -101,6 +101,6 @@ void Reactor::dispatch_ready(FdMode mode, const FdSet& readySet) {
 }
 
 auto Reactor::copy_handlers(FdMode mode) -> HandlerMap {
-    std::lock_guard<std::mutex> lock(_mtx);
+    std::lock_guard lock(_mtx);
     return handlers_for(mode);
 }

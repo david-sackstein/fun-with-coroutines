@@ -10,12 +10,14 @@ namespace coroutines {
                 return AsyncIoCoroutine{std::coroutine_handle<promise_type>::from_promise(*this)};
             }
 
+            // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
             std::suspend_never initial_suspend() { return {}; }
 
             std::suspend_always final_suspend() noexcept { return {}; } // Let me destroy in the dtor
             void return_void() {}
 
             void unhandled_exception() { std::terminate(); }
+            // NOLINTEND(readability-convert-member-functions-to-static)
         };
 
         explicit AsyncIoCoroutine(std::coroutine_handle<promise_type> h) : handle(h) {}

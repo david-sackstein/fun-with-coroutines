@@ -10,6 +10,7 @@ namespace coroutines {
     struct AsyncTaskMarshalled {
         EventLoop &loop;
 
+        // NOLINTBEGIN(readability-convert-member-functions-to-static) -- co_await awaitable
         bool await_ready() { return false; }
 
         void await_suspend(std::coroutine_handle<> h) {
@@ -23,5 +24,6 @@ namespace coroutines {
         }
 
         void await_resume() {}
+        // NOLINTEND(readability-convert-member-functions-to-static)
     };
 }

@@ -9,7 +9,7 @@ EventLoop::EventLoop() :
 
 void EventLoop::post(std::function<void()> task) {
     {
-        std::lock_guard<std::mutex> lg(mtx);
+        std::lock_guard lg(mtx);
         tasks.push(std::move(task));
         ++outstanding_work;
     }
@@ -17,19 +17,19 @@ void EventLoop::post(std::function<void()> task) {
 }
 
 void EventLoop::add_work() {
-    std::lock_guard<std::mutex> lg(mtx);
+    std::lock_guard lg(mtx);
     ++outstanding_work;
 }
 
 void EventLoop::remove_work() {
-    std::lock_guard<std::mutex> lg(mtx);
+    std::lock_guard lg(mtx);
     if (--outstanding_work == 0) {
         cv.notify_all();
     }
 }
 
 void EventLoop::run() {
-    std::unique_lock<std::mutex> lock(mtx);
+    std::unique_lock lock(mtx);
 
     while (true) {
         cv.wait(lock, [&] {

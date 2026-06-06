@@ -17,12 +17,12 @@ void my_task(EventLoop& loop) {
     std::print("Step 1\n");
 
     // First async operation
-    runner->run_async_operation([runner, &loop] {
+    runner->run_async_operation([runner] {
         std::print("From thread {}\n", std::this_thread::get_id());
         std::print("Step 2\n");
 
         // Second async operation
-        runner->run_async_operation([runner, &loop] {
+        runner->run_async_operation([runner] {
             std::print("From thread {}\n", std::this_thread::get_id());
             std::print("Step 3\n");
         });

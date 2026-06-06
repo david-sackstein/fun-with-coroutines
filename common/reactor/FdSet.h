@@ -5,20 +5,20 @@
 #include <stdexcept>
 
 class FdSet {
-    fd_set _fds;
+    fd_set _fds{};
     int _max_fd = -1;
 
 public:
-    FdSet(const std::vector<int>& fds) {
+    explicit FdSet(const std::vector<int>& fds) {
         FD_ZERO(&_fds);
         add(fds);
     }
 
-    bool contains(int fd) const {
+    [[nodiscard]] bool contains(int fd) const {
         return FD_ISSET(fd, &_fds);
     }
 
-    int max_fd() const {
+    [[nodiscard]] int max_fd() const {
         return _max_fd;
     }
 
