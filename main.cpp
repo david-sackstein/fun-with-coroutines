@@ -1,4 +1,4 @@
-//#define COROUTINES
+#define COROUTINES
 
 #ifdef COROUTINES
     #include "coroutines/samples.h"

@@ -23,4 +23,4 @@ void print(std::format_string<Args...> fmt, Args&&... args) {
     return oss.str();
 }
 
-} // namespace io
+}

@@ -1,3 +1,4 @@
+#include "common/generator/Tree.h"
 #include "common/io/print.h"
 #include "coroutines/1. generator/Generator.h"
 
@@ -14,18 +15,68 @@ Generator fibonacci(const int count) {
     }
 }
 
-void run_generator() {
+Generator preorder(const TreeNode* node) {
+    if (node == nullptr) {
+        co_return;
+    }
+
+    co_yield node->value;
+
+    for (const int left_value : preorder(node->left)) {
+        co_yield left_value;
+    }
+
+    for (const int right_value : preorder(node->right)) {
+        co_yield right_value;
+    }
+}
+
+Generator inorder(const TreeNode* node) {
+    if (node == nullptr) {
+        co_return;
+    }
+
+    for (const int left_value : inorder(node->left)) {
+        co_yield left_value;
+    }
+
+    co_yield node->value;
+
+    for (const int right_value : inorder(node->right)) {
+        co_yield right_value;
+    }
+}
+
+void run_fibonacci_demo() {
     io::print("Fibonacci (10 terms):\n");
     auto generator = fibonacci(10);
     for (const int value : generator) {
         io::print("{}\n", value);
     }
 
-    // Second loop - generator is already exhausted, so nothing prints
     io::print("Second pass (exhausted):\n");
     for (const int value : generator) {
         io::print("{}\n", value);
     }
+}
+
+void run_tree_demo() {
+    const TreeNode* const root = sample_tree();
+
+    io::print("\nBST pre-order DFS:\n");
+    for (const int value : preorder(root)) {
+        io::print("{}\n", value);
+    }
+
+    io::print("\nBST in-order DFS:\n");
+    for (const int value : inorder(root)) {
+        io::print("{}\n", value);
+    }
+}
+
+void run_generator() {
+    run_fibonacci_demo();
+    run_tree_demo();
 }
 
 }

@@ -34,6 +34,21 @@ namespace coroutines {
             _handle(handle) {
         }
 
+        Generator(Generator&& other) noexcept : _handle{} {
+            swap(*this, other);
+        }
+
+        Generator& operator=(Generator other) noexcept {
+            swap(*this, other);
+            return *this;
+        }
+
+        Generator(const Generator&) = delete;
+
+        friend void swap(Generator& lhs, Generator& rhs) noexcept {
+            std::swap(lhs._handle, rhs._handle);
+        }
+
         ~Generator() {
             if (_handle) {
                 _handle.destroy();
