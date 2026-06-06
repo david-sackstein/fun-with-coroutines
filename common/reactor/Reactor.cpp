@@ -24,7 +24,7 @@ void Reactor::stop() noexcept {
     _interrupt.notify();
 }
 
-void Reactor::post(int fd, FdMode mode, std::function<void(int)> handler) {
+void Reactor::post(const int fd, const FdMode mode, std::function<void(int)> handler) {
     {
         std::lock_guard<std::mutex> lock(_mtx);
         handlers_for(mode)[fd] = std::move(handler);
@@ -32,7 +32,7 @@ void Reactor::post(int fd, FdMode mode, std::function<void(int)> handler) {
     _interrupt.notify();
 }
 
-void Reactor::remove(int fd, FdMode mode) {
+void Reactor::remove(const int fd, const FdMode mode) {
     {
         std::lock_guard lock(_mtx);
         handlers_for(mode).erase(fd);
@@ -55,11 +55,11 @@ void Reactor::remove_work() noexcept {
     }
 }
 
-auto Reactor::handlers_for(FdMode mode) -> HandlerMap& {
+auto Reactor::handlers_for(const FdMode mode) -> HandlerMap& {
     return mode == FdMode::Read ? _read_handlers : _write_handlers;
 }
 
-auto Reactor::fds_for(FdMode mode) -> std::vector<int> {
+auto Reactor::fds_for(const FdMode mode) -> std::vector<int> {
     std::vector<int> fds;
     for (const auto& [fd, handler] : copy_handlers(mode)) {
         fds.push_back(fd);
@@ -88,7 +88,7 @@ void Reactor::dispatch_ready(const FdSet& readFdSet, const FdSet& writeFdSet) {
     dispatch_ready(FdMode::Write, writeFdSet);
 }
 
-void Reactor::dispatch_ready(FdMode mode, const FdSet& readySet) {
+void Reactor::dispatch_ready(const FdMode mode, const FdSet& readySet) {
     // Copy handlers to avoid holding lock during callbacks
     HandlerMap handlers_copy = copy_handlers(mode);
 
@@ -100,7 +100,7 @@ void Reactor::dispatch_ready(FdMode mode, const FdSet& readySet) {
     }
 }
 
-auto Reactor::copy_handlers(FdMode mode) -> HandlerMap {
+auto Reactor::copy_handlers(const FdMode mode) -> HandlerMap {
     std::lock_guard lock(_mtx);
     return handlers_for(mode);
 }

@@ -73,12 +73,12 @@ private:
 
 // Free functions for range-based for loop support
 template<typename GeneratorType>
-inline GeneratorIterator<GeneratorType> begin(GeneratorType& generator) {
+GeneratorIterator<GeneratorType> begin(GeneratorType& generator) {
     return GeneratorIterator<GeneratorType>(generator);
 }
 
 template<typename GeneratorType>
-inline GeneratorIterator<GeneratorType> end(GeneratorType&) {
+GeneratorIterator<GeneratorType> end(const GeneratorType&) {
     return GeneratorIterator<GeneratorType>();
 }
 

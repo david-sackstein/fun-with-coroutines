@@ -38,7 +38,7 @@ private:
     static void log_input(const char *data, size_t size);
     static void verify_write_complete(size_t expected, size_t actual);
     static void verify_read_complete(size_t expected, size_t actual);
-    static void verify_and_log_echo(const char *sent, size_t sent_size, 
+    static void verify_and_log_echo(const char *sent, size_t sent_size,
                              const char *received, size_t received_size);
 };
 

@@ -32,7 +32,7 @@ namespace no_coroutines {
         return GeneratorIterator(generator);
     }
 
-    inline GeneratorIterator<Generator> end(Generator&) {
+    inline GeneratorIterator<Generator> end(const Generator&) {
         return {};
     }
 }

@@ -7,7 +7,7 @@
 
 namespace coroutines {
 
-EchoServer::EchoServer(Reactor &reactor, int read_fd, int write_fd)
+EchoServer::EchoServer(Reactor &reactor, const int read_fd, const int write_fd)
     : _reactor(reactor), _read_fd(read_fd), _write_fd(write_fd) {}
 
 AsyncIoCoroutine EchoServer::run() const {
@@ -34,11 +34,11 @@ AsyncIoCoroutine EchoServer::run() const {
     std::print("[Server] Finished\n");
 }
 
-void EchoServer::log_received_message(const char *data, size_t size) {
+void EchoServer::log_received_message(const char *data, const size_t size) {
     std::print("[Server] Received: {}", std::string_view(data, size));
 }
 
-void EchoServer::verify_write_complete(size_t expected, size_t actual) {
+void EchoServer::verify_write_complete(const size_t expected, const size_t actual) {
     if (actual < expected) {
         throw std::runtime_error(std::format(
             "[Server] Failed to write all bytes to pipe_server_to_client! Expected {} bytes, wrote {} bytes", expected,

@@ -16,11 +16,11 @@ struct CoroutineObject {
         // NOLINTEND(readability-convert-member-functions-to-static)
     };
 
-    explicit CoroutineObject(std::coroutine_handle<promise_type> h) : handle(h) {}
+    explicit CoroutineObject(std::coroutine_handle<promise_type> h) : _handle(h) {}
 
     CoroutineObject(const CoroutineObject&) = delete;
     CoroutineObject(CoroutineObject&&) = delete;
 
 private:
-    std::coroutine_handle<promise_type> handle;
+    std::coroutine_handle<promise_type> _handle;
 };

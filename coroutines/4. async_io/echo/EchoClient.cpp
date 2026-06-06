@@ -8,10 +8,10 @@
 
 namespace coroutines {
 
-EchoClient::EchoClient(Reactor &reactor, int stdin_fd, int write_fd, int read_fd)
+EchoClient::EchoClient(Reactor &reactor, const int stdin_fd, const int write_fd, const int read_fd)
     : _reactor(reactor), _stdin_fd(stdin_fd), _write_fd(write_fd), _read_fd(read_fd) {}
 
-AsyncIoCoroutine EchoClient::run() {
+AsyncIoCoroutine EchoClient::run() const {
     WorkGuard guard(_reactor);
 
     std::print("[Client] Started\n");
@@ -45,11 +45,11 @@ AsyncIoCoroutine EchoClient::run() {
     std::print("[Client] Finished\n");
 }
 
-void EchoClient::log_input(const char *data, size_t size) {
+void EchoClient::log_input(const char *data, const size_t size) {
     std::print("[Client] Read from stdin: {}", std::string_view(data, size));
 }
 
-void EchoClient::verify_write_complete(size_t expected, size_t actual) {
+void EchoClient::verify_write_complete(const size_t expected, const size_t actual) {
     if (actual < expected) {
         throw std::runtime_error(std::format(
             "[Client] Failed to write all bytes to pipe_client_to_server! Expected {} bytes, wrote {} bytes", expected,
@@ -58,7 +58,7 @@ void EchoClient::verify_write_complete(size_t expected, size_t actual) {
     std::print("[Client] Wrote {} bytes to pipe_client_to_server\n", actual);
 }
 
-void EchoClient::verify_read_complete(size_t expected, size_t actual) {
+void EchoClient::verify_read_complete(const size_t expected, const size_t actual) {
     if (actual < expected) {
         throw std::runtime_error(
             std::format("[Client] Failed to read all bytes from pipe_server_to_client! Expected {} bytes, got {} bytes",
@@ -66,8 +66,8 @@ void EchoClient::verify_read_complete(size_t expected, size_t actual) {
     }
 }
 
-void EchoClient::verify_and_log_echo(const char *sent, size_t sent_size,
-                                     const char *received, size_t received_size) {
+void EchoClient::verify_and_log_echo(const char *sent, const size_t sent_size,
+                                     const char *received, const size_t received_size) {
     if (std::memcmp(sent, received, sent_size) != 0) {
         throw std::runtime_error("[Client] Echo mismatch!");
     }

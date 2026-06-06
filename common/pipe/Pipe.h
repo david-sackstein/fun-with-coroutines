@@ -16,4 +16,3 @@ public:
 private:
     std::array<int, 2> _fds{};
 };
-

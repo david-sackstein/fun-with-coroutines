@@ -30,7 +30,7 @@ void run_async_io() {
     Reactor reactor;
     
     // Create and start client and server coroutines
-    EchoClient client(reactor, STDIN_FILENO, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd());
+    const EchoClient client(reactor, STDIN_FILENO, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd());
     const EchoServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
     
     auto client_task = client.run();

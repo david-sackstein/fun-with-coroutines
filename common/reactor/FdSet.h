@@ -29,7 +29,7 @@ public:
 private:
 
     void add(const std::vector<int>& fds){
-        for (int fd : fds) {
+        for (const int fd : fds) {
             add(fd);
         }
     }

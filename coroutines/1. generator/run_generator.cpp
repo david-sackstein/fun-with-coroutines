@@ -2,7 +2,7 @@
 
 namespace coroutines {
 
-Generator createGenerator(int count) {
+Generator createGenerator(const int count) {
     for (int i=0; i<count; i++) {
         co_yield i;
     }
