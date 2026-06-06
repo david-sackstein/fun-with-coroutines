@@ -1,12 +1,13 @@
+#include "common/io/print.h"
+#include "common/pipe/Pipe.h"
+#include "common/reactor/Reactor.h"
 #include "coroutines/4. async_io/echo/EchoClient.h"
 #include "coroutines/4. async_io/echo/EchoServer.h"
 
-#include "common/pipe/Pipe.h"
-
-#include <print>
-#include <fcntl.h>
 #include <thread>
-#include <stdexcept>
+
+#include <fcntl.h>
+#include <unistd.h>
 
 namespace coroutines {
 
@@ -16,9 +17,9 @@ void setup_stdin();
 std::thread start_stopper_thread(Reactor &reactor);
 
 void run_async_io() {
-    std::print("=== Echo Server Demo ===\n");
-    std::print("Type messages (ending with newline), they will be echoed through pipes\n");
-    std::print("Press Ctrl+D to exit (or wait 30s for timeout)\n\n");
+    io::print("=== Echo Server Demo ===\n");
+    io::print("Type messages (ending with newline), they will be echoed through pipes\n");
+    io::print("Press Ctrl+D to exit (or wait 30s for timeout)\n\n");
 
     setup_stdin();
     
@@ -33,8 +34,8 @@ void run_async_io() {
     const EchoClient client(reactor, STDIN_FILENO, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd());
     const EchoServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
     
-    auto client_task = client.run();
-    auto server_task = server.run();
+    const auto client_task = client.run();
+    const auto server_task = server.run();
     
     // Start timeout thread (detached - just a safety net)
     std::thread stopper = start_stopper_thread(reactor);
@@ -44,10 +45,10 @@ void run_async_io() {
     try {
         reactor.run();
     } catch (const std::exception &e) {
-        std::print("\n✗ Error: {}\n", e.what());
+        io::print("\n✗ Error: {}\n", e.what());
     }
 
-    std::print("\n=== Echo Server Demo Finished ===\n");
+    io::print("\n=== Echo Server Demo Finished ===\n");
 }
 
 void setup_stdin() {
@@ -57,7 +58,7 @@ void setup_stdin() {
 std::thread start_stopper_thread(Reactor &reactor) {
     return std::thread([&reactor] {
         std::this_thread::sleep_for(10s);
-        std::print("\n[Stopper] Timeout - stopping reactor\n");
+        io::print("\n[Stopper] Timeout - stopping reactor\n");
         reactor.stop();
     });
 }

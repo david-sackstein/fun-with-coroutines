@@ -1,13 +1,13 @@
+#include "common/io/print.h"
+#include "common/pipe/Pipe.h"
+#include "common/reactor/Reactor.h"
 #include "no-coroutines/4. async_io/echo/EchoClient.h"
 #include "no-coroutines/4. async_io/echo/EchoServer.h"
 
-#include "common/reactor/Reactor.h"
-#include "common/pipe/Pipe.h"
-
-#include <print>
-#include <unistd.h>
-#include <fcntl.h>
 #include <thread>
+
+#include <fcntl.h>
+#include <unistd.h>
 
 namespace no_coroutines {
 
@@ -17,15 +17,15 @@ void setup_stdin();
 std::thread start_stopper_thread(Reactor &reactor);
 
 void run_async_io() {
-    std::print("=== Echo Server Demo ===\n");
-    std::print("Type messages (ending with newline), they will be echoed through pipes\n");
-    std::print("Press Ctrl+D to exit (or wait 10s for timeout)\n\n");
+    io::print("=== Echo Server Demo ===\n");
+    io::print("Type messages (ending with newline), they will be echoed through pipes\n");
+    io::print("Press Ctrl+D to exit (or wait 10s for timeout)\n\n");
 
     setup_stdin();
     
     // Create two pipes (both will be non-blocking)
-    Pipe pipe_client_to_server;  // Client writes, Server reads
-    Pipe pipe_server_to_client;  // Server writes, Client reads
+    const Pipe pipe_client_to_server;  // Client writes, Server reads
+    const Pipe pipe_server_to_client;  // Server writes, Client reads
     
     // Create reactor
     Reactor reactor;
@@ -45,10 +45,10 @@ void run_async_io() {
     try {
         reactor.run();
     } catch (const std::exception &e) {
-        std::print("\n✗ Error: {}\n", e.what());
+        io::print("\n✗ Error: {}\n", e.what());
     }
 
-    std::print("\n=== Echo Server Demo Finished ===\n");
+    io::print("\n=== Echo Server Demo Finished ===\n");
 }
 
 void setup_stdin() {
@@ -58,7 +58,7 @@ void setup_stdin() {
 std::thread start_stopper_thread(Reactor &reactor) {
     return std::thread([&reactor] {
         std::this_thread::sleep_for(10s);
-        std::print("\n[Stopper] Timeout - stopping reactor\n");
+        io::print("\n[Stopper] Timeout - stopping reactor\n");
         reactor.stop();
     });
 }

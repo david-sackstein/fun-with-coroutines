@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.31)
 
 project(fun_with_coroutines LANGUAGES CXX)
 
-# Force GCC 14
-set(CMAKE_C_COMPILER gcc-14)
-set(CMAKE_CXX_COMPILER g++-14)
-
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     common/*.cpp
     coroutines/*.cpp
@@ -17,7 +13,7 @@ add_executable(fun_with_coroutines
     ${SOURCES}
 )
 
-target_compile_features(fun_with_coroutines PRIVATE cxx_std_23)
+target_compile_features(fun_with_coroutines PRIVATE cxx_std_20)
 
 set_target_properties(fun_with_coroutines PROPERTIES
     CXX_EXTENSIONS OFF

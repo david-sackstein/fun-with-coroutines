@@ -1,9 +1,11 @@
 #include "EchoServer.h"
+#include "common/io/print.h"
 
-#include <print>
-#include <stdexcept>
-#include <unistd.h>
 #include <cerrno>
+#include <format>
+#include <stdexcept>
+
+#include <unistd.h>
 
 namespace no_coroutines {
 
@@ -12,7 +14,7 @@ EchoServer::EchoServer(Reactor &reactor, const int read_fd, const int write_fd)
 
 void EchoServer::run() {
     _work_guard = std::make_unique<WorkGuard>(_reactor);
-    std::print("[Server] Started\n");
+    io::print("[Server] Started\n");
     async_read_message();
 }
 
@@ -61,8 +63,8 @@ void EchoServer::async_read_message() {
 
 void EchoServer::on_read_complete(const size_t bytes_read) {
     if (bytes_read == 0) {
-        std::print("[Server] EOF on pipe_client_to_server\n");
-        std::print("[Server] Finished\n");
+        io::print("[Server] EOF on pipe_client_to_server\n");
+        io::print("[Server] Finished\n");
         _work_guard.reset();  // Release work guard
         return;
     }
@@ -123,7 +125,7 @@ void EchoServer::on_write_complete(const size_t expected, const size_t actual) {
 // ============================================================================
 
 void EchoServer::log_received_message(const char *data, const size_t size) {
-    std::print("[Server] Received: {}", std::string_view(data, size));
+    io::print("[Server] Received: {}", std::string_view(data, size));
 }
 
 void EchoServer::verify_write_complete(const size_t expected, const size_t actual) {
@@ -132,7 +134,7 @@ void EchoServer::verify_write_complete(const size_t expected, const size_t actua
             "[Server] Failed to write all bytes to pipe_server_to_client! Expected {} bytes, wrote {} bytes", expected,
             actual));
     }
-    std::print("[Server] Echoed {} bytes to pipe_server_to_client\n", actual);
+    io::print("[Server] Echoed {} bytes to pipe_server_to_client\n", actual);
 }
 
 }

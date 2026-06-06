@@ -1,10 +1,12 @@
 #include "EchoClient.h"
+#include "common/io/print.h"
 
-#include <print>
-#include <stdexcept>
-#include <unistd.h>
 #include <cerrno>
 #include <cstring>
+#include <format>
+#include <stdexcept>
+
+#include <unistd.h>
 
 namespace no_coroutines {
 
@@ -13,7 +15,7 @@ EchoClient::EchoClient(Reactor &reactor, const int stdin_fd, const int write_fd,
 
 void EchoClient::run() {
     _work_guard = std::make_unique<WorkGuard>(_reactor);
-    std::print("[Client] Started\n");
+    io::print("[Client] Started\n");
     async_read_from_stdin();
 }
 
@@ -22,7 +24,7 @@ void EchoClient::run() {
 // ============================================================================
 
 void EchoClient::async_read_from_stdin() {
-    std::print("[Client] Waiting for input...\n");
+    io::print("[Client] Waiting for input...\n");
     
     auto self = std::make_shared<size_t>(0);  // offset tracker
     
@@ -31,7 +33,7 @@ void EchoClient::async_read_from_stdin() {
         
         if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
             // Need to retry - re-post
-            _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int fd) mutable {
+            _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int /*fd*/) mutable {
                 this->async_read_from_stdin();
             });
             return;
@@ -70,7 +72,7 @@ void EchoClient::async_read_from_stdin() {
                     }
                     
                     *self += n2;
-                    bool found = (*self > 0 && _write_buffer[*self - 1] == '\n');
+                    const bool found = (*self > 0 && _write_buffer[*self - 1] == '\n');
                     
                     if (found || *self >= sizeof(_write_buffer)) {
                         _reactor.remove(_stdin_fd, Reactor::FdMode::Read);
@@ -94,9 +96,9 @@ void EchoClient::async_read_from_stdin() {
 
 void EchoClient::on_stdin_read_complete(const size_t bytes_read) {
     if (bytes_read == 0) {
-        std::print("[Client] EOF on stdin\n");
+        io::print("[Client] EOF on stdin\n");
         close(_write_fd);
-        std::print("[Client] Finished\n");
+        io::print("[Client] Finished\n");
         _work_guard.reset();  // Release work guard to stop reactor
         return;
     }
@@ -203,7 +205,7 @@ void EchoClient::on_echo_complete(const size_t expected, const size_t actual) {
 // ============================================================================
 
 void EchoClient::log_input(const char *data, const size_t size) {
-    std::print("[Client] Read from stdin: {}", std::string_view(data, size));
+    io::print("[Client] Read from stdin: {}", std::string_view(data, size));
 }
 
 void EchoClient::verify_write_complete(const size_t expected, const size_t actual) {
@@ -212,7 +214,7 @@ void EchoClient::verify_write_complete(const size_t expected, const size_t actua
             "[Client] Failed to write all bytes to pipe_client_to_server! Expected {} bytes, wrote {} bytes", expected,
             actual));
     }
-    std::print("[Client] Wrote {} bytes to pipe_client_to_server\n", actual);
+    io::print("[Client] Wrote {} bytes to pipe_client_to_server\n", actual);
 }
 
 void EchoClient::verify_read_complete(const size_t expected, const size_t actual) {
@@ -228,8 +230,8 @@ void EchoClient::verify_and_log_echo(const char *sent, const size_t sent_size,
     if (std::memcmp(sent, received, sent_size) != 0) {
         throw std::runtime_error("[Client] Echo mismatch!");
     }
-    std::print("[Client] Read from pipe_server_to_client: {}", std::string_view(received, received_size));
-    std::print("[Client] ✓ Echo verified successfully!\n");
+    io::print("[Client] Read from pipe_server_to_client: {}", std::string_view(received, received_size));
+    io::print("[Client] ✓ Echo verified successfully!\n");
 }
 
 }

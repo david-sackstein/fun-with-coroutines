@@ -1,30 +1,28 @@
-#include "coroutines/3. async_tasks_marshalled/CoroutineObject.h"
-#include "coroutines/3. async_tasks_marshalled/AsyncTaskMarshalled.h"
-
 #include "common/event_loop/EventLoop.h"
-
-#include <print>
+#include "common/io/print.h"
+#include "coroutines/3. async_tasks_marshalled/AsyncTaskMarshalled.h"
+#include "coroutines/3. async_tasks_marshalled/CoroutineObject.h"
 
 namespace coroutines {
 
 using namespace std::chrono_literals;
 
 CoroutineObject my_task(EventLoop &loop) {
-    EventLoop::Work guard(loop);
+    const EventLoop::Work guard(loop);
 
-    std::print("From thread {}\n", std::this_thread::get_id());
+    io::print("From thread {}\n", io::format_thread_id());
 
-    std::print("Step 1\n");
+    io::print("Step 1\n");
     co_await AsyncTaskMarshalled{loop};
 
-    std::print("From thread {}\n", std::this_thread::get_id());
+    io::print("From thread {}\n", io::format_thread_id());
 
-    std::print("Step 2\n");
+    io::print("Step 2\n");
     co_await AsyncTaskMarshalled{loop};
 
-    std::print("From thread {}\n", std::this_thread::get_id());
+    io::print("From thread {}\n", io::format_thread_id());
 
-    std::print("Step 3\n");
+    io::print("Step 3\n");
 }
 
 void run_async_tasks_marshalled() {
@@ -33,7 +31,7 @@ void run_async_tasks_marshalled() {
 
     g_loop.run();
 
-    std::print("Loop exited cleanly\n");
+    io::print("Loop exited cleanly\n");
 }
 
 }

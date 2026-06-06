@@ -2,6 +2,7 @@
 
 #include "common/event_loop/EventLoop.h"
 
+#include <coroutine>
 #include <thread>
 
 using namespace std::chrono_literals;

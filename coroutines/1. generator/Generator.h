@@ -1,8 +1,8 @@
 #pragma once
 
-#include <coroutine>
-#include <print>
 #include "common/generator/Iterator.h"
+
+#include <coroutine>
 
 namespace coroutines {
     struct Generator {
@@ -22,7 +22,7 @@ namespace coroutines {
             void unhandled_exception() {}
             // NOLINTEND(readability-convert-member-functions-to-static)
 
-            std::suspend_always yield_value(int value) {
+            std::suspend_always yield_value(const int value) {
                 current_value = value;
                 return {};
             }
