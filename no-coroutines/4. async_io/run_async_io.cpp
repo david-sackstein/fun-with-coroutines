@@ -1,8 +1,8 @@
 #include "common/io/print.h"
 #include "common/pipe/Pipe.h"
 #include "common/reactor/Reactor.h"
-#include "no-coroutines/4. async_io/echo/EchoClient.h"
-#include "no-coroutines/4. async_io/echo/EchoServer.h"
+#include "no-coroutines/4. async_io/calc/CalcClient.h"
+#include "no-coroutines/4. async_io/calc/CalcServer.h"
 
 #include <thread>
 
@@ -17,8 +17,8 @@ void setup_stdin();
 std::thread start_stopper_thread(Reactor &reactor);
 
 void run_async_io() {
-    io::print("=== Echo Server Demo ===\n");
-    io::print("Type messages (ending with newline), they will be echoed through pipes\n");
+    io::print("=== Calculator Demo ===\n");
+    io::print("Enter expressions like 23+5 (one +, -, *, / operation, ending with newline)\n");
     io::print("Press Ctrl+D to exit (or wait 10s for timeout)\n\n");
 
     setup_stdin();
@@ -31,8 +31,8 @@ void run_async_io() {
     Reactor reactor;
     
     // Create and start client and server
-    EchoClient client(reactor, STDIN_FILENO, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd());
-    EchoServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
+    CalcClient client(reactor, STDIN_FILENO, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd());
+    CalcServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
     
     client.run();
     server.run();
@@ -48,7 +48,7 @@ void run_async_io() {
         io::print("\n✗ Error: {}\n", e.what());
     }
 
-    io::print("\n=== Echo Server Demo Finished ===\n");
+    io::print("\n=== Calculator Demo Finished ===\n");
 }
 
 void setup_stdin() {

@@ -5,9 +5,9 @@
 
 namespace coroutines {
 
-class EchoClient {
+class CalcClient {
 public:
-    EchoClient(Reactor& reactor, int stdin_fd, int write_fd, int read_fd);
+    CalcClient(Reactor& reactor, int stdin_fd, int write_fd, int read_fd);
     
     [[nodiscard]] AsyncIoCoroutine run() const;
 
@@ -20,8 +20,7 @@ private:
     static void log_input(const char *data, size_t size);
     static void verify_write_complete(size_t expected, size_t actual);
     static void verify_read_complete(size_t expected, size_t actual);
-    static void verify_and_log_echo(const char *sent, size_t sent_size,
-                             const char *received, size_t received_size);
+    static void verify_and_log_response(std::string_view received, std::string_view expected);
 };
 
 }

@@ -5,9 +5,9 @@
 
 namespace coroutines {
 
-class EchoServer {
+class CalcServer {
 public:
-    EchoServer(Reactor& reactor, int read_fd, int write_fd);
+    CalcServer(Reactor& reactor, int read_fd, int write_fd);
     
     [[nodiscard]] AsyncIoCoroutine run() const;
 
