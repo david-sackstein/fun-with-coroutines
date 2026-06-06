@@ -28,14 +28,14 @@ namespace coroutines {
     };
 
     struct UntilFull {
-        bool operator()(std::span<const char> buffer, size_t offset) const {
+        bool operator()(const std::span<const char> buffer, const size_t offset) const {
             return offset == buffer.size();
         }
     };
 
     template<char Delimiter>
     struct UntilDelimiter {
-        bool operator()(std::span<const char> buffer, size_t offset) const {
+        bool operator()(const std::span<const char> buffer, const size_t offset) const {
             return offset != 0 && buffer[offset - 1] == Delimiter;
         }
     };
@@ -44,28 +44,28 @@ namespace coroutines {
     // Factory Functions - Public API
     // ============================================================================
 
-    inline auto async_read_buffer(Reactor &reactor, int fd, std::span<char> buffer) {
+    inline auto async_read_buffer(Reactor &reactor, const int fd, const std::span<char> buffer) {
         // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Read, SingleShot, DefaultRead>{reactor, fd, buffer};
     }
 
-    inline auto async_read_exact(Reactor &reactor, int fd, std::span<char> buffer) {
+    inline auto async_read_exact(Reactor &reactor, const int fd, const std::span<char> buffer) {
         // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Read, UntilFull, DefaultRead>{reactor, fd, buffer};
     }
 
     template<char Delimiter>
-    auto async_read_until(Reactor &reactor, int fd, std::span<char> buffer) {
+    auto async_read_until(Reactor &reactor, const int fd, const std::span<char> buffer) {
         // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Read, UntilDelimiter<Delimiter>, DefaultRead>{reactor, fd, buffer};
     }
 
-    inline auto async_write_buffer(Reactor &reactor, int fd, std::span<const char> buffer) {
+    inline auto async_write_buffer(Reactor &reactor, const int fd, const std::span<const char> buffer) {
         // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Write, SingleShot, DefaultWrite>{reactor, fd, buffer};
     }
 
-    inline auto async_write_exact(Reactor &reactor, int fd, std::span<const char> buffer) {
+    inline auto async_write_exact(Reactor &reactor, const int fd, const std::span<const char> buffer) {
         // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Write, UntilFull, DefaultWrite>{reactor, fd, buffer};
     }

@@ -26,7 +26,7 @@ void Reactor::stop() noexcept {
 
 void Reactor::post(const int fd, const FdMode mode, std::function<void(int)> handler) {
     {
-        std::lock_guard<std::mutex> lock(_mtx);
+        std::lock_guard lock(_mtx);
         handlers_for(mode)[fd] = std::move(handler);
     }
     _interrupt.notify();
