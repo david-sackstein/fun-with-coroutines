@@ -26,6 +26,7 @@ namespace coroutines {
               _fd(fd),
               _buffer(buffer) {}
 
+        // NOLINTBEGIN(readability-convert-member-functions-to-static) -- co_await awaitable
         bool await_ready() { return false; }
 
         void await_suspend(std::coroutine_handle<> handle) {
@@ -40,9 +41,10 @@ namespace coroutines {
             post_perform_io();
         }
 
-        size_t await_resume() {
+        [[nodiscard]] size_t await_resume() const {
             return _offset;
         }
+        // NOLINTEND(readability-convert-member-functions-to-static)
 
     private:
         void post_perform_io() {
@@ -52,7 +54,7 @@ namespace coroutines {
         }
 
         void perform_io() {
-            ssize_t n = IoFunc{}(_fd, _buffer.data() + _offset, _buffer.size() - _offset);
+            const ssize_t n = IoFunc{}(_fd, _buffer.data() + _offset, _buffer.size() - _offset);
 
             if (should_retry(n)) {
                 // Stay registered, reactor will notify again when ready
@@ -73,12 +75,12 @@ namespace coroutines {
             }
         }
 
-        void remove_and_resume() {
+        void remove_and_resume() const {
             _reactor.remove(_fd, Mode);
             _handle.resume();
         }
 
-        [[nodiscard]] bool should_retry(ssize_t n) const {
+        [[nodiscard]] static bool should_retry(ssize_t n) {
             return n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
         }
 

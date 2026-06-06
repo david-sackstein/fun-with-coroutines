@@ -78,7 +78,7 @@ inline GeneratorIterator<GeneratorType> begin(GeneratorType& generator) {
 }
 
 template<typename GeneratorType>
-inline GeneratorIterator<GeneratorType> end(GeneratorType& generator) {
+inline GeneratorIterator<GeneratorType> end(GeneratorType&) {
     return GeneratorIterator<GeneratorType>();
 }
 

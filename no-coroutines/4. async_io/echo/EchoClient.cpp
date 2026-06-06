@@ -48,12 +48,12 @@ void EchoClient::async_read_from_stdin() {
         *self += n;
         
         // Check if we found newline or need more data
-        bool found_newline = (*self > 0 && _write_buffer[*self - 1] == '\n');
-        bool buffer_full = (*self >= sizeof(_write_buffer));
+        const bool found_newline = (*self > 0 && _write_buffer[*self - 1] == '\n');
+        const bool buffer_full = (*self >= sizeof(_write_buffer));
         
         if (!found_newline && !buffer_full) {
             // Need more data - re-post
-            _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int fd) mutable {
+            _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int) mutable {
                 auto read_handler_inner = [this, self](int fd) mutable {
                     ssize_t n2 = ::read(fd, _write_buffer + *self, sizeof(_write_buffer) - *self);
                     

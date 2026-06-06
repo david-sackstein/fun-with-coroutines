@@ -3,9 +3,9 @@
 #include "coroutines/4. async_io/async/AsyncBuffer.h"
 
 namespace coroutines {
-// ============================================================================
-// Default I/O functions
-// ============================================================================
+    // ============================================================================
+    // Default I/O functions
+    // ============================================================================
 
     struct DefaultRead {
         ssize_t operator()(int fd, char *buf, size_t count) const {
@@ -19,9 +19,9 @@ namespace coroutines {
         }
     };
 
-// ============================================================================
-// Stop Conditions
-// ============================================================================
+    // ============================================================================
+    // Stop Conditions
+    // ============================================================================
 
     struct SingleShot {
         bool operator()(std::span<const char>, size_t) const { return true; }
@@ -40,33 +40,33 @@ namespace coroutines {
         }
     };
 
-// ============================================================================
-// Factory Functions - Public API
-// ============================================================================
-
-#pragma clang diagnostic push
-// Suppress a false linter alarm. The buffer argument points to a variable allocated in the coroutine frame so it safe.
-#pragma ide diagnostic ignored "LocalValueEscapesScope"
+    // ============================================================================
+    // Factory Functions - Public API
+    // ============================================================================
 
     inline auto async_read_buffer(Reactor &reactor, int fd, std::span<char> buffer) {
+        // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Read, SingleShot, DefaultRead>{reactor, fd, buffer};
     }
 
     inline auto async_read_exact(Reactor &reactor, int fd, std::span<char> buffer) {
+        // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Read, UntilFull, DefaultRead>{reactor, fd, buffer};
     }
 
     template<char Delimiter>
-    inline auto async_read_until(Reactor &reactor, int fd, std::span<char> buffer) {
+    auto async_read_until(Reactor &reactor, int fd, std::span<char> buffer) {
+        // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Read, UntilDelimiter<Delimiter>, DefaultRead>{reactor, fd, buffer};
     }
 
     inline auto async_write_buffer(Reactor &reactor, int fd, std::span<const char> buffer) {
+        // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Write, SingleShot, DefaultWrite>{reactor, fd, buffer};
     }
 
     inline auto async_write_exact(Reactor &reactor, int fd, std::span<const char> buffer) {
+        // ReSharper disable once CppDFALocalValueEscapesFunction
         return AsyncBuffer<Reactor::FdMode::Write, UntilFull, DefaultWrite>{reactor, fd, buffer};
     }
-#pragma clang diagnostic pop
 }

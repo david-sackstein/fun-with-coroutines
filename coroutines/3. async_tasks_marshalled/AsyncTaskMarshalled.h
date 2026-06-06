@@ -13,7 +13,7 @@ namespace coroutines {
         // NOLINTBEGIN(readability-convert-member-functions-to-static) -- co_await awaitable
         bool await_ready() { return false; }
 
-        void await_suspend(std::coroutine_handle<> h) {
+        void await_suspend(std::coroutine_handle<> h) const {
             std::thread t([=, this] {
                 std::this_thread::sleep_for(1s);
                 loop.post([=] {

@@ -68,9 +68,9 @@ auto Reactor::fds_for(FdMode mode) -> std::vector<int> {
 }
 
 void Reactor::wait_once(FdSet& readFdSet, FdSet& writeFdSet) {
-    auto max_fd = std::max(readFdSet.max_fd(), writeFdSet.max_fd());
+    const auto max_fd = std::max(readFdSet.max_fd(), writeFdSet.max_fd());
     while (true) {
-        int ret = ::select(max_fd + 1, readFdSet.native(), writeFdSet.native(), nullptr, nullptr);
+        const int ret = ::select(max_fd + 1, readFdSet.native(), writeFdSet.native(), nullptr, nullptr);
         if (ret >= 0) {
             return;
         }

@@ -10,7 +10,7 @@ namespace coroutines {
 EchoServer::EchoServer(Reactor &reactor, int read_fd, int write_fd)
     : _reactor(reactor), _read_fd(read_fd), _write_fd(write_fd) {}
 
-AsyncIoCoroutine EchoServer::run() {
+AsyncIoCoroutine EchoServer::run() const {
     WorkGuard guard(_reactor);
 
     std::print("[Server] Started\n");

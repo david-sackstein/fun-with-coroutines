@@ -9,7 +9,7 @@ class EchoServer {
 public:
     EchoServer(Reactor& reactor, int read_fd, int write_fd);
     
-    AsyncIoCoroutine run();
+    [[nodiscard]] AsyncIoCoroutine run() const;
 
 private:
     Reactor& _reactor;

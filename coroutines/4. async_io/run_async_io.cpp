@@ -23,15 +23,15 @@ void run_async_io() {
     setup_stdin();
     
     // Create two pipes (both will be non-blocking)
-    Pipe pipe_client_to_server;  // Client writes, Server reads
-    Pipe pipe_server_to_client;  // Server writes, Client reads
+    const Pipe pipe_client_to_server;  // Client writes, Server reads
+    const Pipe pipe_server_to_client;  // Server writes, Client reads
     
     // Create reactor
     Reactor reactor;
     
     // Create and start client and server coroutines
     EchoClient client(reactor, STDIN_FILENO, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd());
-    EchoServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
+    const EchoServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
     
     auto client_task = client.run();
     auto server_task = server.run();
