@@ -10,7 +10,7 @@ namespace no_coroutines {
 class EchoClient {
 public:
     EchoClient(Reactor& reactor, int stdin_fd, int write_fd, int read_fd);
-    
+
     void run();
 
 private:
@@ -18,28 +18,28 @@ private:
     int _stdin_fd;
     int _write_fd;
     int _read_fd;
-    
+
     std::unique_ptr<WorkGuard> _work_guard;
-    
+
     char _write_buffer[256]{};
     char _read_buffer[256]{};
-    
+
     // Async operation helpers
     void async_read_from_stdin();
-    void on_stdin_read_complete(size_t bytes_read);
-    
+    void on_read_complete(size_t bytes_read);
+
     void async_write_to_server(size_t size);
     void on_write_complete(size_t expected, size_t actual);
-    
-    void async_read_echo(size_t expected);
-    void on_echo_complete(size_t expected, size_t actual);
-    
+
+    void async_read_echo(size_t size);
+    void on_read_echo_complete(size_t expected, size_t actual);
+
     // Utility methods
     static void log_input(const char *data, size_t size);
     static void verify_write_complete(size_t expected, size_t actual);
     static void verify_read_complete(size_t expected, size_t actual);
     static void verify_and_log_echo(const char *sent, size_t sent_size,
-                             const char *received, size_t received_size);
+                                    const char *received, size_t received_size);
 };
 
 }

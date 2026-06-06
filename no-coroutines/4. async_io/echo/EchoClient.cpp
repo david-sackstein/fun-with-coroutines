@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <cstring>
 #include <format>
+#include <functional>
 #include <stdexcept>
 
 #include <unistd.h>
@@ -25,84 +26,54 @@ void EchoClient::run() {
 
 void EchoClient::async_read_from_stdin() {
     io::print("[Client] Waiting for input...\n");
-    
-    auto self = std::make_shared<size_t>(0);  // offset tracker
-    
-    auto read_handler = [this, self](int fd) mutable {
-        ssize_t n = ::read(fd, _write_buffer + *self, sizeof(_write_buffer) - *self);
-        
+
+    auto offset = std::make_shared<size_t>(0);
+
+    std::function<void(int)> read_handler;
+    read_handler = [this, offset, read_handler](const int fd) mutable {
+        const ssize_t n = ::read(fd, _write_buffer + *offset, sizeof(_write_buffer) - *offset);
+
         if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
-            // Need to retry - re-post
-            _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int /*fd*/) mutable {
-                this->async_read_from_stdin();
-            });
+            // Retry
+            _reactor.post(_stdin_fd, Reactor::FdMode::Read, read_handler);
             return;
         }
-        
+
         if (n <= 0) {
             // EOF or error
             _reactor.remove(_stdin_fd, Reactor::FdMode::Read);
-            on_stdin_read_complete(0);
+            on_read_complete(0);
             return;
         }
-        
-        // Success: n > 0
-        *self += n;
-        
-        // Check if we found newline or need more data
-        const bool found_newline = (*self > 0 && _write_buffer[*self - 1] == '\n');
-        const bool buffer_full = (*self >= sizeof(_write_buffer));
-        
+
+        *offset += n;
+
+        // Check if we found newline or buffer is full
+        const bool found_newline = (*offset > 0 && _write_buffer[*offset - 1] == '\n');
+        const bool buffer_full = (*offset >= sizeof(_write_buffer));
+
         if (!found_newline && !buffer_full) {
-            // Need more data - re-post
-            _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int) mutable {
-                auto read_handler_inner = [this, self](int fd) mutable {
-                    ssize_t n2 = ::read(fd, _write_buffer + *self, sizeof(_write_buffer) - *self);
-                    
-                    if (n2 < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
-                        // Retry
-                        _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int) { async_read_from_stdin(); });
-                        return;
-                    }
-                    
-                    if (n2 <= 0) {
-                        _reactor.remove(_stdin_fd, Reactor::FdMode::Read);
-                        on_stdin_read_complete(*self);
-                        return;
-                    }
-                    
-                    *self += n2;
-                    const bool found = (*self > 0 && _write_buffer[*self - 1] == '\n');
-                    
-                    if (found || *self >= sizeof(_write_buffer)) {
-                        _reactor.remove(_stdin_fd, Reactor::FdMode::Read);
-                        on_stdin_read_complete(*self);
-                    } else {
-                        _reactor.post(_stdin_fd, Reactor::FdMode::Read, [this, self](int) { async_read_from_stdin(); });
-                    }
-                };
-                _reactor.post(_stdin_fd, Reactor::FdMode::Read, read_handler_inner);
-            });
-            return;
+            // Need more data
+            _reactor.post(_stdin_fd, Reactor::FdMode::Read, read_handler);
+        } else {
+            // Done
+            _reactor.remove(_stdin_fd, Reactor::FdMode::Read);
+            on_read_complete(*offset);
         }
-        
-        // Done reading
-        _reactor.remove(_stdin_fd, Reactor::FdMode::Read);
-        on_stdin_read_complete(*self);
     };
-    
+
     _reactor.post(_stdin_fd, Reactor::FdMode::Read, read_handler);
 }
 
-void EchoClient::on_stdin_read_complete(const size_t bytes_read) {
+void EchoClient::on_read_complete(const size_t bytes_read) {
     if (bytes_read == 0) {
         io::print("[Client] EOF on stdin\n");
         close(_write_fd);
         io::print("[Client] Finished\n");
-        _work_guard.reset();  // Release work guard to stop reactor
+        _work_guard.reset();  // Release work guard
         return;
     }
-    
+
     log_input(_write_buffer, bytes_read);
     async_write_to_server(bytes_read);
 }
@@ -114,26 +85,26 @@ void EchoClient::on_stdin_read_complete(const size_t bytes_read) {
 void EchoClient::async_write_to_server(const size_t size) {
     auto offset = std::make_shared<size_t>(0);
     auto total = std::make_shared<size_t>(size);
-    
+
     std::function<void(int)> write_handler;
-    write_handler = [this, offset, total, write_handler](int fd) mutable {
-        ssize_t n = ::write(fd, _write_buffer + *offset, *total - *offset);
-        
+    write_handler = [this, offset, total, write_handler](const int fd) mutable {
+        const ssize_t n = ::write(fd, _write_buffer + *offset, *total - *offset);
+
         if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
             // Retry
             _reactor.post(_write_fd, Reactor::FdMode::Write, write_handler);
             return;
         }
-        
+
         if (n <= 0) {
             // Error
             _reactor.remove(_write_fd, Reactor::FdMode::Write);
             on_write_complete(*total, *offset);
             return;
         }
-        
+
         *offset += n;
-        
+
         if (*offset < *total) {
             // Need to write more
             _reactor.post(_write_fd, Reactor::FdMode::Write, write_handler);
@@ -143,7 +114,7 @@ void EchoClient::async_write_to_server(const size_t size) {
             on_write_complete(*total, *offset);
         }
     };
-    
+
     _reactor.post(_write_fd, Reactor::FdMode::Write, write_handler);
 }
 
@@ -156,46 +127,46 @@ void EchoClient::on_write_complete(const size_t expected, const size_t actual) {
 // Async read exact amount from server
 // ============================================================================
 
-void EchoClient::async_read_echo(const size_t expected) {
+void EchoClient::async_read_echo(const size_t size) {
     auto offset = std::make_shared<size_t>(0);
-    auto total = std::make_shared<size_t>(expected);
-    
+    auto total = std::make_shared<size_t>(size);
+
     std::function<void(int)> read_handler;
-    read_handler = [this, offset, total, read_handler](int fd) mutable {
-        ssize_t n = ::read(fd, _read_buffer + *offset, *total - *offset);
-        
+    read_handler = [this, offset, total, read_handler](const int fd) mutable {
+        const ssize_t n = ::read(fd, _read_buffer + *offset, *total - *offset);
+
         if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
             // Retry
             _reactor.post(_read_fd, Reactor::FdMode::Read, read_handler);
             return;
         }
-        
+
         if (n <= 0) {
             // EOF or error
             _reactor.remove(_read_fd, Reactor::FdMode::Read);
-            on_echo_complete(*total, *offset);
+            on_read_echo_complete(*total, *offset);
             return;
         }
-        
+
         *offset += n;
-        
+
         if (*offset < *total) {
             // Need to read more
             _reactor.post(_read_fd, Reactor::FdMode::Read, read_handler);
         } else {
             // Done
             _reactor.remove(_read_fd, Reactor::FdMode::Read);
-            on_echo_complete(*total, *offset);
+            on_read_echo_complete(*total, *offset);
         }
     };
-    
+
     _reactor.post(_read_fd, Reactor::FdMode::Read, read_handler);
 }
 
-void EchoClient::on_echo_complete(const size_t expected, const size_t actual) {
+void EchoClient::on_read_echo_complete(const size_t expected, const size_t actual) {
     verify_read_complete(expected, actual);
     verify_and_log_echo(_write_buffer, expected, _read_buffer, actual);
-    
+
     // Continue the loop - read next input
     async_read_from_stdin();
 }
