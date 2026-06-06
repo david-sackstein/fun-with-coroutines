@@ -4,7 +4,7 @@
 #include <exception>
 
 struct CoroutineObject {
-     struct promise_type {
+    struct promise_type {
         CoroutineObject get_return_object() {
             return CoroutineObject{std::coroutine_handle<promise_type>::from_promise(*this)};
         }

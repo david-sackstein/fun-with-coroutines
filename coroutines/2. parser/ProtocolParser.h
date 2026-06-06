@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/parser/Protocol.h"
-#include "coroutines/4. async_tasks_marshalled/CoroutineObject.h"
+#include "coroutines/common/CoroutineObject.h"
 
 #include <map>
 #include <string>

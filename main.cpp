@@ -10,6 +10,5 @@ int main() {
     run_generator();                 // 1. generator
     run_parser();                    // 2. parser
     run_async_tasks();               // 3. async_tasks
-    run_async_tasks_marshalled();    // 4. async_tasks_marshalled
-    run_async_io();                  // 5. async_io
+    run_async_io();                  // 4. async_io
 }
