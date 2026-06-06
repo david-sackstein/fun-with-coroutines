@@ -1,20 +1,32 @@
 #pragma once
 
-#include <print>
 #include "common/generator/Iterator.h"
 
 namespace no_coroutines {
     class Generator {
     public:
-        explicit Generator(int count) : _count(count), _current_index(0), _current_value(0) {}
+        explicit Generator(const int count)
+            : _remaining(count), _phase(count > 0 ? Phase::Emit : Phase::Finished) {}
 
         bool next() {
-            if (_current_index >= _count) {
+            switch (_phase) {
+            case Phase::Finished:
                 return false;
+
+            case Phase::Emit:
+                _current_value = _a;
+                {
+                    const int next_a = _b;
+                    const int next_b = _a + _b;
+                    _a = next_a;
+                    _b = next_b;
+                }
+                if (--_remaining == 0) {
+                    _phase = Phase::Finished;
+                }
+                return true;
             }
-            _current_value = _current_index;
-            _current_index++;
-            return true;
+            return false;
         }
 
         [[nodiscard]] int get_current_value() const {
@@ -22,12 +34,18 @@ namespace no_coroutines {
         }
 
     private:
-        int _count;
-        int _current_index;
-        int _current_value;
+        enum class Phase {
+            Emit,
+            Finished
+        };
+
+        int _remaining;
+        Phase _phase;
+        int _current_value = 0;
+        int _a = 0;
+        int _b = 1;
     };
 
-    // Enable range-based for loop via ADL
     inline GeneratorIterator<Generator> begin(Generator& generator) {
         return GeneratorIterator(generator);
     }

@@ -4,19 +4,20 @@
 
 namespace no_coroutines {
 
-Generator createGenerator(int count) {
+Generator fibonacci(const int count) {
     return Generator(count);
 }
 
 void run_generator() {
-    // Using range-based for loop with iterator
-    auto generator = createGenerator(10);
-    for (int value : generator) {
+    std::print("Fibonacci (10 terms):\n");
+    auto generator = fibonacci(10);
+    for (const int value : generator) {
         std::print("{}\n", value);
     }
-    
+
     // Second loop - generator is already exhausted, so nothing prints
-    for (int value : generator) {
+    std::print("Second pass (exhausted):\n");
+    for (const int value : generator) {
         std::print("{}\n", value);
     }
 }

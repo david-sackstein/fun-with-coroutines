@@ -1,22 +1,30 @@
 #include "coroutines/1. generator/Generator.h"
 
+#include <print>
+
 namespace coroutines {
 
-Generator createGenerator(const int count) {
-    for (int i=0; i<count; i++) {
-        co_yield i;
+Generator fibonacci(const int count) {
+    int a = 0;
+    int b = 1;
+    for (int i = 0; i < count; ++i) {
+        co_yield a;
+        const int next = a + b;
+        a = b;
+        b = next;
     }
 }
 
 void run_generator() {
-    // Using range-based for loop with iterator
-    auto generator = createGenerator(10);
-    for (int value : generator) {
+    std::print("Fibonacci (10 terms):\n");
+    auto generator = fibonacci(10);
+    for (const int value : generator) {
         std::print("{}\n", value);
     }
-    
+
     // Second loop - generator is already exhausted, so nothing prints
-    for (int value : generator) {
+    std::print("Second pass (exhausted):\n");
+    for (const int value : generator) {
         std::print("{}\n", value);
     }
 }
