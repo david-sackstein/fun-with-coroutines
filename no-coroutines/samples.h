@@ -2,6 +2,7 @@
 
 namespace no_coroutines {
     void run_generator();
+    void run_parser();
     void run_async_tasks();
     void run_async_tasks_marshalled();
     void run_async_io();
