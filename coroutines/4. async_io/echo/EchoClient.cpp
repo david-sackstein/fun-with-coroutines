@@ -1,14 +1,11 @@
-#include "common/async_io/LineHandler.h"
-#include "common/async_io/LineTransport.h"
 #include "common/io/print.h"
 #include "common/reactor/WorkGuard.h"
 #include "coroutines/4. async_io/async/AsyncIo.h"
-#include "coroutines/4. async_io/LineRpc.h"
 #include "coroutines/4. async_io/echo/EchoClient.h"
 
+#include <cstring>
+#include <format>
 #include <stdexcept>
-
-#include <unistd.h>
 
 namespace coroutines {
 
@@ -17,8 +14,6 @@ EchoClient::EchoClient(Reactor &reactor, const int stdin_fd, const int write_fd,
 
 AsyncIoCoroutine EchoClient::run() const {
     const WorkGuard guard(_reactor);
-    const async_io::LineHandler handler = async_io::echo_line_handler();
-    const async_io::LineTransport transport{_reactor, _read_fd, _write_fd};
 
     io::print("[Client] Started\n");
 
@@ -27,20 +22,25 @@ AsyncIoCoroutine EchoClient::run() const {
 
     while (true) {
         io::print("[Client] Waiting for input...\n");
-        const size_t request_size = co_await async_read_until<'\n'>(_reactor, _stdin_fd, write_buffer);
+        const size_t total = co_await async_read_until<'\n'>(_reactor, _stdin_fd, write_buffer);
 
-        if (request_size == 0) {
+        if (total == 0) {
             io::print("[Client] EOF on stdin\n");
             close(_write_fd);
             break;
         }
 
-        log_input(write_buffer, request_size);
+        log_input(write_buffer, total);
 
-        async_io::LineRpcCall call{{write_buffer, request_size}, read_buffer};
-        co_await line_rpc(transport, call);
+        const size_t written = co_await async_write_exact(_reactor, _write_fd, {write_buffer, total});
 
-        verify_and_log_response(call.request, {call.response.data(), call.response_size}, handler);
+        verify_write_complete(total, written);
+
+        const size_t echoed = co_await async_read_exact(_reactor, _read_fd, {read_buffer, total});
+
+        verify_read_complete(total, echoed);
+
+        verify_and_log_echo(write_buffer, total, read_buffer, echoed);
     }
 
     io::print("[Client] Finished\n");
@@ -50,12 +50,29 @@ void EchoClient::log_input(const char *data, const size_t size) {
     io::print("[Client] Read from stdin: {}", std::string_view(data, size));
 }
 
-void EchoClient::verify_and_log_response(const std::string_view request, const std::string_view response,
-                                         const async_io::LineHandler &handler) {
-    if (!async_io::response_matches(request, response, handler)) {
+void EchoClient::verify_write_complete(const size_t expected, const size_t actual) {
+    if (actual < expected) {
+        throw std::runtime_error(std::format(
+            "[Client] Failed to write all bytes to pipe_client_to_server! Expected {} bytes, wrote {} bytes", expected,
+            actual));
+    }
+    io::print("[Client] Wrote {} bytes to pipe_client_to_server\n", actual);
+}
+
+void EchoClient::verify_read_complete(const size_t expected, const size_t actual) {
+    if (actual < expected) {
+        throw std::runtime_error(
+            std::format("[Client] Failed to read all bytes from pipe_server_to_client! Expected {} bytes, got {} bytes",
+                        expected, actual));
+    }
+}
+
+void EchoClient::verify_and_log_echo(const char *sent, const size_t sent_size,
+                                     const char *received, const size_t received_size) {
+    if (std::memcmp(sent, received, sent_size) != 0) {
         throw std::runtime_error("[Client] Echo mismatch!");
     }
-    io::print("[Client] Read from pipe_server_to_client: {}", response);
+    io::print("[Client] Read from pipe_server_to_client: {}", std::string_view(received, received_size));
     io::print("[Client] ✓ Echo verified successfully!\n");
 }
 
