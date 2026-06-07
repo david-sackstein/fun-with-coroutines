@@ -5,7 +5,7 @@ namespace no_coroutines {
     void run_parser();
     void run_async_tasks();
     void run_async_io();
-    void run_co_return();
+    void run_aggregation();
 }
 
 using namespace no_coroutines;

@@ -177,15 +177,15 @@ void run_calculator_sample() {
     io::print("\n");
 }
 
-void run_co_return() {
-    io::print("=== co_return demo ===\n");
+void run_aggregation() {
+    io::print("=== Aggregation demo ===\n");
     io::print("Three samples — parser map, async aggregate, calculator RPC batch\n");
 
     run_parser_sample();
     run_async_sample();
     run_calculator_sample();
 
-    io::print("\n=== co_return demo finished ===\n");
+    io::print("\n=== Aggregation demo finished ===\n");
 }
 
 }
