@@ -1,15 +1,60 @@
-#define COROUTINES
+#include "coroutines/4. async_io/CalculatorRepl.h"
+#include "no-coroutines/4. async_io/CalculatorRepl.h"
 
-#ifdef COROUTINES
-    #include "coroutines/samples.h"
-#else
-    #include "no-coroutines/samples.h"
-#endif
+#include "tests/Side.h"
 
-int main() {
-    run_generator();                 // 1. generator
-    run_parser();                    // 2. parser
-    run_async_tasks();               // 3. async_tasks
-    run_async_io();                  // 4. async_io
-    run_aggregation();               // 5. aggregation
+#include <gtest/gtest.h>
+
+#include <iostream>
+#include <string_view>
+
+namespace {
+
+[[nodiscard]] bool is_gtest_flag(const std::string_view arg) {
+    return arg.starts_with("--gtest_");
+}
+
+[[nodiscard]] bool should_run_tests(const int argc, char **argv) {
+    if (argc < 2) {
+        return true;
+    }
+
+    if (is_gtest_flag(argv[1])) {
+        return true;
+    }
+
+    for (int index = 2; index < argc; ++index) {
+        if (is_gtest_flag(argv[index])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+Side parse_repl_side(const int argc, char **argv) {
+    if (argc >= 2 && std::string_view{argv[1]} == "--no-coroutines") {
+        return Side::NoCoroutines;
+    }
+    return Side::Coroutines;
+}
+
+void run_repl(const Side side) {
+    if (side == Side::Coroutines) {
+        coroutines::run_calculator_repl();
+        return;
+    }
+    no_coroutines::run_calculator_repl();
+}
+
+}
+
+int main(int argc, char **argv) {
+    if (should_run_tests(argc, argv)) {
+        ::testing::InitGoogleTest(&argc, argv);
+        return RUN_ALL_TESTS();
+    }
+
+    run_repl(parse_repl_side(argc, argv));
+    return 0;
 }

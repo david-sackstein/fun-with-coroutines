@@ -1,6 +1,6 @@
 #include "common/event_loop/EventLoop.h"
-#include "common/io/print.h"
 #include "no-coroutines/3. async_tasks/AsyncTaskRunnerMarshalled.h"
+#include "no-coroutines/5. aggregation/AsyncAggregate.h"
 
 #include <functional>
 #include <memory>
@@ -25,14 +25,12 @@ void aggregate_totals(EventLoop &loop, std::shared_ptr<EventLoop::Work> *keepali
     });
 }
 
-void run_async_sample() {
-    io::print("\n=== Sample 2 — Marshalled async aggregate ===\n");
-
-    auto keepalive = std::make_shared<EventLoop::Work>(g_loop);
-    aggregate_totals(g_loop, &keepalive, [](const int sum) {
-        io::print("sum: {}\n", sum);
-    });
-    g_loop.run();
+int run_async_aggregate(EventLoop &loop) {
+    int result = 0;
+    auto keepalive = std::make_shared<EventLoop::Work>(loop);
+    aggregate_totals(loop, &keepalive, [&result](const int sum) { result = sum; });
+    loop.run();
+    return result;
 }
 
 }

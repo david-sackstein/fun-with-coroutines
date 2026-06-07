@@ -1,6 +1,5 @@
 #include "common/generator/Tree.h"
-#include "common/io/print.h"
-#include "coroutines/1. generator/Generator.h"
+#include "coroutines/1. generator/TreeTraversal.h"
 
 namespace coroutines {
 
@@ -33,20 +32,6 @@ Generator inorder(const TreeNode* node) {
 
     for (const int right_value : inorder(node->right)) {
         co_yield right_value;
-    }
-}
-
-void run_tree_sample() {
-    const TreeNode* const root = sample_tree();
-
-    io::print("\nBST pre-order DFS:\n");
-    for (const int value : preorder(root)) {
-        io::print("{}\n", value);
-    }
-
-    io::print("\nBST in-order DFS:\n");
-    for (const int value : inorder(root)) {
-        io::print("{}\n", value);
     }
 }
 

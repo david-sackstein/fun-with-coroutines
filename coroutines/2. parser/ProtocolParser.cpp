@@ -6,7 +6,11 @@ namespace coroutines {
 void ProtocolParser::run() {
     io::print("=== Parser protocol demo ===\n");
     io::print("Commands: SET <key> <value>, GET <key>\n\n");
-    run_script();
+    run_script_sync();
+}
+
+void ProtocolParser::run_script_sync() {
+    [[maybe_unused]] auto script = run_script();
 }
 
 CoroutineObject ProtocolParser::run_script() {
@@ -54,11 +58,6 @@ CoroutineObject ProtocolParser::handle_get(const std::string_view line) {
     if (iterator != _store.end()) {
         io::print("{}\n", iterator->second);
     }
-}
-
-void run_parser() {
-    ProtocolParser parser;
-    parser.run();
 }
 
 }

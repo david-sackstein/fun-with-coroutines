@@ -1,9 +1,10 @@
 #include "common/async_io/CalcLine.h"
-#include "common/io/print.h"
 #include "common/pipe/Pipe.h"
 #include "common/reactor/Reactor.h"
+#include "common/testing/Delays.h"
 #include "no-coroutines/4. async_io/async/AsyncIoCallbacks.h"
 #include "no-coroutines/4. async_io/calc/CalcServer.h"
+#include "no-coroutines/5. aggregation/CalculatorBatch.h"
 
 #include <algorithm>
 #include <array>
@@ -17,8 +18,6 @@
 #include <unistd.h>
 
 namespace no_coroutines {
-
-using namespace std::chrono_literals;
 
 namespace {
 
@@ -80,9 +79,6 @@ private:
         }
 
         _answers[_question_index] = parse_result_line(_expected_response);
-        io::print("[Quiz] {} → {}\n",
-                  std::string_view{_write_buffer, _question_size - 1},
-                  _answers[_question_index]);
 
         ++_question_index;
         if (_question_index < quiz_questions.size()) {
@@ -92,7 +88,8 @@ private:
 
         close(_write_fd);
         _work_guard.reset();
-        _on_complete(_answers);
+        auto callback = std::move(_on_complete);
+        callback(_answers);
     }
 
     Reactor &_reactor;
@@ -109,16 +106,9 @@ private:
     std::function<void(std::array<int, 4>)> _on_complete;
 };
 
-void solve_quiz(Reactor &reactor, const int write_fd, const int read_fd,
-                std::function<void(std::array<int, 4>)> on_complete) {
-    SolveQuiz(reactor, write_fd, read_fd).start(std::move(on_complete));
 }
 
-}
-
-void run_calculator_sample() {
-    io::print("\n=== Sample 3 — Calculator RPC batch ===\n");
-
+std::array<int, 4> run_calculator_batch() {
     const Pipe pipe_client_to_server;
     const Pipe pipe_server_to_client;
 
@@ -127,27 +117,22 @@ void run_calculator_sample() {
     CalcServer server(reactor, pipe_client_to_server.read_fd(), pipe_server_to_client.write_fd());
     server.run();
 
-    solve_quiz(reactor, pipe_client_to_server.write_fd(), pipe_server_to_client.read_fd(),
-               [&reactor](const std::array<int, 4> &answers) {
-                   io::print("answers:");
-                   for (const int answer : answers) {
-                       io::print(" {}", answer);
-                   }
-                   io::print("\n");
-                   reactor.stop();
-               });
+    std::array<int, 4> answers{};
+    const auto quiz = std::make_shared<SolveQuiz>(reactor, pipe_client_to_server.write_fd(),
+                                                   pipe_server_to_client.read_fd());
+    quiz->start([&reactor, &answers](const std::array<int, 4> &result) {
+        answers = result;
+        reactor.stop();
+    });
 
     std::thread stopper([&reactor] {
-        std::this_thread::sleep_for(5s);
+        std::this_thread::sleep_for(testing_delay::reactor_safety);
         reactor.stop();
     });
     stopper.detach();
 
-    try {
-        reactor.run();
-    } catch (const std::exception &exception) {
-        io::print("✗ Error: {}\n", exception.what());
-    }
+    reactor.run();
+    return answers;
 }
 
 }

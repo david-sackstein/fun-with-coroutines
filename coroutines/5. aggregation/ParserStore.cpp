@@ -1,11 +1,10 @@
 #include "common/io/print.h"
 #include "common/parser/Protocol.h"
+#include "coroutines/5. aggregation/ParserStore.h"
 
 #include <map>
 #include <optional>
 #include <string>
-
-#include "coroutines/common/Task.h"
 
 namespace coroutines {
 
@@ -41,17 +40,6 @@ Task<std::map<std::string, std::string>> load_store_from_script() {
     }
 
     co_return store;
-}
-
-void run_parser_sample() {
-    io::print("\n=== Sample 1 — Parser store ===\n");
-
-    const std::map<std::string, std::string> store = load_store_from_script().get();
-
-    io::print("store ({} entries):\n", store.size());
-    for (const auto &[key, value] : store) {
-        io::print("  {} → {}\n", key, value);
-    }
 }
 
 }

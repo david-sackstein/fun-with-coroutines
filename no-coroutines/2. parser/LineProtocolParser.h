@@ -12,6 +12,8 @@ class LineProtocolParser {
 public:
     void run();
 
+    [[nodiscard]] const std::map<std::string, std::string> &store() const { return _store; }
+
 private:
     enum class Phase {
         ReadLine,

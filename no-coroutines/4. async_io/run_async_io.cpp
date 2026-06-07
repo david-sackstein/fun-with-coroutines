@@ -1,6 +1,8 @@
 #include "common/io/print.h"
 #include "common/pipe/Pipe.h"
 #include "common/reactor/Reactor.h"
+#include "common/testing/Delays.h"
+#include "no-coroutines/4. async_io/CalculatorRepl.h"
 #include "no-coroutines/4. async_io/calc/CalcClient.h"
 #include "no-coroutines/4. async_io/calc/CalcServer.h"
 
@@ -11,15 +13,13 @@
 
 namespace no_coroutines {
 
-using namespace std::chrono_literals;
-
 void setup_stdin();
 std::thread start_stopper_thread(Reactor &reactor);
 
-void run_async_io() {
-    io::print("=== Calculator Demo ===\n");
+void run_calculator_repl() {
+    io::print("=== Calculator REPL ===\n");
     io::print("Enter expressions like 23+5 (one +, -, *, / operation, ending with newline)\n");
-    io::print("Press Ctrl+D to exit (or wait 10s for timeout)\n\n");
+    io::print("Press Ctrl+D to exit (or wait for timeout)\n\n");
 
     setup_stdin();
     
@@ -48,7 +48,7 @@ void run_async_io() {
         io::print("\n✗ Error: {}\n", e.what());
     }
 
-    io::print("\n=== Calculator Demo Finished ===\n");
+    io::print("\n=== Calculator REPL Finished ===\n");
 }
 
 void setup_stdin() {
@@ -57,7 +57,7 @@ void setup_stdin() {
 
 std::thread start_stopper_thread(Reactor &reactor) {
     return std::thread([&reactor] {
-        std::this_thread::sleep_for(10s);
+        std::this_thread::sleep_for(testing_delay::repl_safety);
         io::print("\n[Stopper] Timeout - stopping reactor\n");
         reactor.stop();
     });

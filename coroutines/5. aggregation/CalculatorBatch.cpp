@@ -1,9 +1,10 @@
 #include "common/async_io/CalcLine.h"
-#include "common/io/print.h"
 #include "common/pipe/Pipe.h"
 #include "common/reactor/Reactor.h"
+#include "common/testing/Delays.h"
 #include "coroutines/4. async_io/async/AsyncIo.h"
 #include "coroutines/4. async_io/calc/CalcServer.h"
+#include "coroutines/5. aggregation/CalculatorBatch.h"
 #include "coroutines/common/Task.h"
 
 #include <array>
@@ -15,8 +16,6 @@
 
 namespace coroutines {
 
-using namespace std::chrono_literals;
-
 namespace {
 
 constexpr std::array<std::string_view, 4> quiz_questions = {"2+2\n", "10-3\n", "4*5\n", "20/4\n"};
@@ -26,6 +25,8 @@ int parse_result_line(std::string_view line) {
         line.remove_suffix(1);
     }
     return std::stoi(std::string{line});
+}
+
 }
 
 Task<std::array<int, 4>> solve_quiz(Reactor &reactor, const int write_fd, const int read_fd) {
@@ -54,18 +55,13 @@ Task<std::array<int, 4>> solve_quiz(Reactor &reactor, const int write_fd, const 
         }
 
         answers[index] = parse_result_line(expected);
-        io::print("[Quiz] {} → {}\n", std::string_view{question.data(), question.size() - 1}, answers[index]);
     }
 
     close(write_fd);
     co_return answers;
 }
 
-}
-
-void run_calculator_sample() {
-    io::print("\n=== Sample 3 — Calculator RPC batch ===\n");
-
+std::array<int, 4> run_calculator_batch() {
     const Pipe pipe_client_to_server;
     const Pipe pipe_server_to_client;
 
@@ -79,25 +75,13 @@ void run_calculator_sample() {
     quiz.start();
 
     std::thread stopper([&reactor] {
-        std::this_thread::sleep_for(5s);
+        std::this_thread::sleep_for(testing_delay::reactor_safety);
         reactor.stop();
     });
     stopper.detach();
 
-    try {
-        reactor.run();
-    } catch (const std::exception &exception) {
-        io::print("✗ Error: {}\n", exception.what());
-        return;
-    }
-
-    const std::array<int, 4> answers = quiz.get();
-
-    io::print("answers:");
-    for (const int answer : answers) {
-        io::print(" {}", answer);
-    }
-    io::print("\n");
+    reactor.run();
+    return quiz.get();
 }
 
 }

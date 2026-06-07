@@ -12,6 +12,9 @@ namespace coroutines {
 class ProtocolParser {
 public:
     void run();
+    void run_script_sync();
+
+    [[nodiscard]] const std::map<std::string, std::string> &store() const { return _store; }
 
 private:
     CoroutineObject run_script();

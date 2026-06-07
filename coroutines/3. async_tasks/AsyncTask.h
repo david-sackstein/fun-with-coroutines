@@ -1,9 +1,9 @@
 #pragma once
 
-#include <thread>
-#include <coroutine>
+#include "common/testing/Delays.h"
 
-using namespace std::chrono_literals;
+#include <coroutine>
+#include <thread>
 
 namespace coroutines {
     struct AsyncTask {
@@ -12,7 +12,7 @@ namespace coroutines {
 
         void await_suspend(std::coroutine_handle<> h) {
             std::thread t([=] {
-                std::this_thread::sleep_for(1s);
+                std::this_thread::sleep_for(testing_delay::async_task);
                 // Resume directly on this thread, not posting to event loop
                 h.resume();
             });
