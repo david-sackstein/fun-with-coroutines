@@ -7,6 +7,12 @@
 
 namespace coroutines {
 
+// promise_type hooks
+// initial_suspend   suspend_always
+// final_suspend     suspend_always
+// return_void       —
+// return_value      yes
+// yield_value       —
 template<typename T>
 struct Task {
     struct promise_type {

@@ -8,6 +8,12 @@
 
 namespace coroutines {
 
+// promise_type hooks
+// initial_suspend   suspend_always
+// final_suspend     suspend_always
+// return_void       yes
+// return_value      —
+// yield_value       suspend_always
 struct Generator {
     struct promise_type {
         Generator get_return_object() {

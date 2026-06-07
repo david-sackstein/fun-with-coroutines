@@ -5,6 +5,12 @@
 
 namespace coroutines {
 
+// promise_type hooks
+// initial_suspend   suspend_never
+// final_suspend     suspend_always
+// return_void       yes
+// return_value      —
+// yield_value       —
 struct AsyncIoCoroutine {
     struct promise_type {
         AsyncIoCoroutine get_return_object() {
