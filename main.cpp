@@ -1,11 +1,8 @@
 #include "coroutines/4. async_io/CalculatorRepl.h"
 #include "no-coroutines/4. async_io/CalculatorRepl.h"
 
-#include "tests/Side.h"
-
 #include <gtest/gtest.h>
 
-#include <iostream>
 #include <string_view>
 
 namespace {
@@ -32,21 +29,6 @@ namespace {
     return false;
 }
 
-Side parse_repl_side(const int argc, char **argv) {
-    if (argc >= 2 && std::string_view{argv[1]} == "--no-coroutines") {
-        return Side::NoCoroutines;
-    }
-    return Side::Coroutines;
-}
-
-void run_repl(const Side side) {
-    if (side == Side::Coroutines) {
-        coroutines::run_calculator_repl();
-        return;
-    }
-    no_coroutines::run_calculator_repl();
-}
-
 }
 
 int main(int argc, char **argv) {
@@ -55,6 +37,11 @@ int main(int argc, char **argv) {
         return RUN_ALL_TESTS();
     }
 
-    run_repl(parse_repl_side(argc, argv));
+    if (argc >= 2 && std::string_view{argv[1]} == "--no-coroutines") {
+        no_coroutines::run_calculator_repl();
+    } else {
+        coroutines::run_calculator_repl();
+    }
+
     return 0;
 }

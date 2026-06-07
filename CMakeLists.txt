@@ -20,7 +20,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 )
 
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
-    tests/*.cpp
+    "tests/*/*/*.cpp"
 )
 
 add_executable(fun_with_coroutines

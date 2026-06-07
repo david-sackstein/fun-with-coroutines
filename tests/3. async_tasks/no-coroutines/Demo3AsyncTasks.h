@@ -1,0 +1,21 @@
+#pragma once
+
+#include "common/event_loop/EventLoop.h"
+#include "no-coroutines/3. async_tasks/MarshalledTask.h"
+#include "no-coroutines/3. async_tasks/UnmarshalledTask.h"
+
+#include <gtest/gtest.h>
+
+#include <string>
+#include <vector>
+
+class Demo3AsyncTasksNoCoroutines : public testing::Test {
+protected:
+    [[nodiscard]] std::vector<std::string> collect_unmarshalled_thread_ids() const {
+        return no_coroutines::collect_unmarshalled_thread_ids();
+    }
+
+    [[nodiscard]] std::vector<std::string> collect_marshalled_thread_ids(EventLoop &loop) const {
+        return no_coroutines::collect_marshalled_thread_ids(loop);
+    }
+};
