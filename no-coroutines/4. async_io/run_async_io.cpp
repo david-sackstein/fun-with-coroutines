@@ -41,12 +41,7 @@ void run_calculator_repl() {
     std::thread stopper = start_stopper_thread(reactor);
     stopper.detach();
     
-    // Run the reactor and catch any exceptions
-    try {
-        reactor.run();
-    } catch (const std::exception &e) {
-        io::print("\n✗ Error: {}\n", e.what());
-    }
+    reactor.run();
 
     io::print("\n=== Calculator REPL Finished ===\n");
 }

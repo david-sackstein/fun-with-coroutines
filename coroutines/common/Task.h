@@ -20,11 +20,10 @@ struct Task {
 
         void return_value(T value) { _result = std::move(value); }
 
-        void unhandled_exception() { _exception = std::current_exception(); }
+        void unhandled_exception() { std::terminate(); }
         // NOLINTEND(readability-convert-member-functions-to-static)
 
         T _result{};
-        std::exception_ptr _exception;
     };
 
     explicit Task(std::coroutine_handle<promise_type> handle) : _handle(handle) {}
@@ -59,10 +58,6 @@ struct Task {
 
         if (!_handle.done()) {
             throw std::runtime_error("Task not complete — drive the event loop or reactor first");
-        }
-
-        if (_handle.promise()._exception) {
-            std::rethrow_exception(_handle.promise()._exception);
         }
 
         return std::move(_handle.promise()._result);

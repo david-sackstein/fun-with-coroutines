@@ -3,6 +3,7 @@
 #include "common/generator/Iterator.h"
 
 #include <coroutine>
+#include <exception>
 #include <utility>
 
 namespace coroutines {
@@ -19,7 +20,7 @@ struct Generator {
 
         void return_void() {}
 
-        void unhandled_exception() {}
+        void unhandled_exception() { std::terminate(); }
         // NOLINTEND(readability-convert-member-functions-to-static)
 
         std::suspend_always yield_value(const int value) {
