@@ -11,4 +11,5 @@ int main() {
     run_parser();                    // 2. parser
     run_async_tasks();               // 3. async_tasks
     run_async_io();                  // 4. async_io
+    run_co_return();                 // 5. co_return
 }
