@@ -1,5 +1,5 @@
-#include "coroutines/4. async_io/CalculatorRepl.h"
-#include "no-coroutines/4. async_io/CalculatorRepl.h"
+#include "coroutines/04-async-io/CalculatorRepl.h"
+#include "no-coroutines/04-async-io/CalculatorRepl.h"
 
 #include <gtest/gtest.h>
 
