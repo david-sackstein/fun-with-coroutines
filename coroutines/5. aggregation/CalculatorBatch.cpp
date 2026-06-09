@@ -5,7 +5,7 @@
 #include "coroutines/4. async_io/async/AsyncIo.h"
 #include "coroutines/4. async_io/calc/CalcServer.h"
 #include "coroutines/5. aggregation/CalculatorBatch.h"
-#include "coroutines/common/Task.h"
+#include "coroutines/return_types/Task.h"
 
 #include <array>
 #include <stdexcept>

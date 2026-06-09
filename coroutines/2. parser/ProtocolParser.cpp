@@ -13,14 +13,14 @@ void ProtocolParser::run_script_sync() {
     [[maybe_unused]] auto script = run_script();
 }
 
-CoroutineObject ProtocolParser::run_script() {
+NeverSuspendCoroutine ProtocolParser::run_script() {
     for (const std::string_view line : parser::script_lines) {
         parse_line(line);
     }
     co_return;
 }
 
-CoroutineObject ProtocolParser::parse_line(const std::string_view line) {
+NeverSuspendCoroutine ProtocolParser::parse_line(const std::string_view line) {
     std::string_view rest = line;
     const auto command = parser::take_word(rest);
     if (!command) {
@@ -37,7 +37,7 @@ CoroutineObject ProtocolParser::parse_line(const std::string_view line) {
     }
 }
 
-CoroutineObject ProtocolParser::handle_set(const std::string_view line) {
+NeverSuspendCoroutine ProtocolParser::handle_set(const std::string_view line) {
     std::string_view rest = line;
     const auto key = parser::take_word(rest);
     const auto value = parser::take_word(rest);
@@ -48,7 +48,7 @@ CoroutineObject ProtocolParser::handle_set(const std::string_view line) {
     io::print("OK\n");
 }
 
-CoroutineObject ProtocolParser::handle_get(const std::string_view line) {
+NeverSuspendCoroutine ProtocolParser::handle_get(const std::string_view line) {
     std::string_view rest = line;
     const auto key = parser::take_word(rest);
     if (!key) {

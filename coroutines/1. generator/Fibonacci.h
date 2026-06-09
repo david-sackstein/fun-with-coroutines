@@ -1,6 +1,6 @@
 #pragma once
 
-#include "coroutines/1. generator/Generator.h"
+#include "coroutines/return_types/Generator.h"
 
 namespace coroutines {
 

@@ -12,7 +12,7 @@ namespace coroutines {
 CalcClient::CalcClient(Reactor &reactor, const int stdin_fd, const int write_fd, const int read_fd)
     : _reactor(reactor), _stdin_fd(stdin_fd), _write_fd(write_fd), _read_fd(read_fd) {}
 
-AsyncIoCoroutine CalcClient::run() const {
+FinalSuspendCoroutine CalcClient::run() const {
     const WorkGuard guard(_reactor);
 
     io::print("[Client] Started\n");

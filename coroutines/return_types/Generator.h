@@ -12,7 +12,7 @@ namespace coroutines {
 // initial_suspend   suspend_always
 // final_suspend     suspend_always
 // return_void       yes
-// return_value      —
+// return_value      no
 // yield_value       suspend_always
 struct Generator {
     struct promise_type {

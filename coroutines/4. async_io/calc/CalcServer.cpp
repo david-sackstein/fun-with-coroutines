@@ -12,7 +12,7 @@ namespace coroutines {
 CalcServer::CalcServer(Reactor &reactor, const int read_fd, const int write_fd)
     : _reactor(reactor), _read_fd(read_fd), _write_fd(write_fd) {}
 
-AsyncIoCoroutine CalcServer::run() const {
+FinalSuspendCoroutine CalcServer::run() const {
     const WorkGuard guard(_reactor);
 
     io::print("[Server] Started\n");

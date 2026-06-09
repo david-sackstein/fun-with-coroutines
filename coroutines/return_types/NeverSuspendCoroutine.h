@@ -9,12 +9,12 @@ namespace coroutines {
 // initial_suspend   suspend_never
 // final_suspend     suspend_never
 // return_void       yes
-// return_value      —
-// yield_value       —
-struct CoroutineObject {
+// return_value      no
+// yield_value       no
+struct NeverSuspendCoroutine {
     struct promise_type {
-        CoroutineObject get_return_object() {
-            return CoroutineObject{std::coroutine_handle<promise_type>::from_promise(*this)};
+        NeverSuspendCoroutine get_return_object() {
+            return NeverSuspendCoroutine{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
         // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
@@ -27,13 +27,13 @@ struct CoroutineObject {
         // NOLINTEND(readability-convert-member-functions-to-static)
     };
 
-    explicit CoroutineObject(std::coroutine_handle<promise_type> handle) : _handle(handle) {}
+    explicit NeverSuspendCoroutine(std::coroutine_handle<promise_type> handle) : _handle(handle) {}
 
-    CoroutineObject(const CoroutineObject &) = delete;
-    CoroutineObject &operator=(const CoroutineObject &) = delete;
+    NeverSuspendCoroutine(const NeverSuspendCoroutine &) = delete;
+    NeverSuspendCoroutine &operator=(const NeverSuspendCoroutine &) = delete;
 
-    CoroutineObject(CoroutineObject &&) = delete;
-    CoroutineObject &operator=(CoroutineObject &&) = delete;
+    NeverSuspendCoroutine(NeverSuspendCoroutine &&) = delete;
+    NeverSuspendCoroutine &operator=(NeverSuspendCoroutine &&) = delete;
 
 private:
     std::coroutine_handle<promise_type> _handle;

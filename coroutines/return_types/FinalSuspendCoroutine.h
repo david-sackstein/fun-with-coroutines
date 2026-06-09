@@ -9,12 +9,12 @@ namespace coroutines {
 // initial_suspend   suspend_never
 // final_suspend     suspend_always
 // return_void       yes
-// return_value      —
-// yield_value       —
-struct AsyncIoCoroutine {
+// return_value      no
+// yield_value       no
+struct FinalSuspendCoroutine {
     struct promise_type {
-        AsyncIoCoroutine get_return_object() {
-            return AsyncIoCoroutine{std::coroutine_handle<promise_type>::from_promise(*this)};
+        FinalSuspendCoroutine get_return_object() {
+            return FinalSuspendCoroutine{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
         // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
@@ -27,15 +27,15 @@ struct AsyncIoCoroutine {
         // NOLINTEND(readability-convert-member-functions-to-static)
     };
 
-    explicit AsyncIoCoroutine(std::coroutine_handle<promise_type> handle) : _handle(handle) {}
+    explicit FinalSuspendCoroutine(std::coroutine_handle<promise_type> handle) : _handle(handle) {}
 
-    AsyncIoCoroutine(const AsyncIoCoroutine &) = delete;
-    AsyncIoCoroutine &operator=(const AsyncIoCoroutine &) = delete;
+    FinalSuspendCoroutine(const FinalSuspendCoroutine &) = delete;
+    FinalSuspendCoroutine &operator=(const FinalSuspendCoroutine &) = delete;
 
-    AsyncIoCoroutine(AsyncIoCoroutine &&) = delete;
-    AsyncIoCoroutine &operator=(AsyncIoCoroutine &&) = delete;
+    FinalSuspendCoroutine(FinalSuspendCoroutine &&) = delete;
+    FinalSuspendCoroutine &operator=(FinalSuspendCoroutine &&) = delete;
 
-    ~AsyncIoCoroutine() {
+    ~FinalSuspendCoroutine() {
         if (_handle) {
             _handle.destroy();
         }

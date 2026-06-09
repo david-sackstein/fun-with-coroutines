@@ -2,7 +2,7 @@
 #include "common/testing/Delays.h"
 #include "coroutines/3. async_tasks/AsyncTask.h"
 #include "coroutines/3. async_tasks/UnmarshalledTask.h"
-#include "coroutines/common/CoroutineObject.h"
+#include "coroutines/return_types/NeverSuspendCoroutine.h"
 
 #include <thread>
 #include <vector>
@@ -11,7 +11,7 @@ namespace coroutines {
 
 namespace {
 
-CoroutineObject unmarshalled_task(std::vector<std::string> &thread_ids) {
+NeverSuspendCoroutine unmarshalled_task(std::vector<std::string> &thread_ids) {
     thread_ids.push_back(io::format_thread_id());
 
     co_await AsyncTask{};

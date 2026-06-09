@@ -1,6 +1,6 @@
 #pragma once
 
-#include "coroutines/4. async_io/async/AsyncIoCoroutine.h"
+#include "coroutines/return_types/FinalSuspendCoroutine.h"
 #include "common/reactor/Reactor.h"
 
 namespace coroutines {
@@ -9,7 +9,7 @@ class CalcServer {
 public:
     CalcServer(Reactor& reactor, int read_fd, int write_fd);
     
-    [[nodiscard]] AsyncIoCoroutine run() const;
+    [[nodiscard]] FinalSuspendCoroutine run() const;
 
 private:
     Reactor& _reactor;

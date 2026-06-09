@@ -2,7 +2,7 @@
 #include "common/io/print.h"
 #include "coroutines/3. async_tasks/AsyncTaskMarshalled.h"
 #include "coroutines/3. async_tasks/MarshalledTask.h"
-#include "coroutines/common/CoroutineObject.h"
+#include "coroutines/return_types/NeverSuspendCoroutine.h"
 
 #include <vector>
 
@@ -10,7 +10,7 @@ namespace coroutines {
 
 namespace {
 
-CoroutineObject marshalled_task(EventLoop &loop, std::vector<std::string> &thread_ids) {
+NeverSuspendCoroutine marshalled_task(EventLoop &loop, std::vector<std::string> &thread_ids) {
     const EventLoop::Work guard(loop);
 
     thread_ids.push_back(io::format_thread_id());
