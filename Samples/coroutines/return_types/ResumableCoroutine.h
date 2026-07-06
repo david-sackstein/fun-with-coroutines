@@ -1,5 +1,9 @@
 #pragma once
 
+// Used in Demo 02 - parser.
+// Appropriate because the coroutine must be driven from outside:
+// it suspends waiting for input and the caller resumes it each time data arrives.
+
 #include <coroutine>
 #include <exception>
 #include <utility>
@@ -13,37 +17,34 @@ namespace coroutines {
 // frame alive so the caller can observe done(). The frame is destroyed when
 // the ResumableCoroutine object is destroyed or move-assigned.
 //
-// Used in the parser demo: the driver calls resume() each time new input arrives
-// in the buffer, and the parser coroutine pulls words from the buffer with co_await.
-//
 // promise_type hooks
-// initial_suspend   suspend_always  — starts suspended; caller drives the first step
-// final_suspend     suspend_always  — stays suspended at co_return so done() is observable
+// initial_suspend   suspend_always  - starts suspended; caller drives the first step
+// final_suspend     suspend_always  - stays suspended at co_return so done() is observable
 // return_void       yes
 // return_value      no
 // yield_value       no
 struct ResumableCoroutine {
+    // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
     struct promise_type {
         ResumableCoroutine get_return_object() {
             return ResumableCoroutine{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
         std::suspend_always initial_suspend() {
             return {};
         }
+
         std::suspend_always final_suspend() noexcept {
             return {};
         }
 
-        void return_void() {
-        }
+        void return_void() {}
 
         void unhandled_exception() {
             std::terminate();
         }
-        // NOLINTEND(readability-convert-member-functions-to-static)
     };
+    // NOLINTEND(readability-convert-member-functions-to-static)
 
     explicit ResumableCoroutine(std::coroutine_handle<promise_type> handle) : _handle(handle) {}
 

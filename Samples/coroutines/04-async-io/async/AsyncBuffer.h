@@ -19,6 +19,7 @@ namespace coroutines {
 // StopCondition — callable(span, offset) -> bool; true means transfer is complete
 // IoFunc        — callable(fd, ptr, count) -> ssize_t; wraps ::read or ::write
 
+// NOLINTBEGIN(readability-convert-member-functions-to-static) -- co_await awaitable
 template<Reactor::FdMode Mode, typename StopCondition, typename IoFunc>
 struct AsyncBuffer {
     // CharType is 'char' for reads, 'const char' for writes.
@@ -34,8 +35,6 @@ struct AsyncBuffer {
         : _reactor(reactor),
           _fd(fd),
           _buffer(buffer) {}
-
-    // NOLINTBEGIN(readability-convert-member-functions-to-static) -- co_await awaitable
 
     // Always suspend; even a zero-byte buffer must be consistent with the async model.
     bool await_ready() {
@@ -60,8 +59,6 @@ struct AsyncBuffer {
     [[nodiscard]] size_t await_resume() const {
         return _offset;
     }
-
-    // NOLINTEND(readability-convert-member-functions-to-static)
 
 private:
     // Return true when the stop condition is satisfied.
@@ -109,5 +106,6 @@ private:
         _handle.resume();
     }
 };
+// NOLINTEND(readability-convert-member-functions-to-static)
 
 }

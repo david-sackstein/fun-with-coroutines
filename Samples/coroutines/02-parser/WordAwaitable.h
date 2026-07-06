@@ -10,6 +10,8 @@ namespace coroutines {
 
 // Custom awaitable for co_await. Suspends the parser coroutine until the buffer
 // holds a complete word, then returns that word as the result of co_await.
+
+// NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine awaiter
 struct WordAwaitable {
     parser::InputBuffer &buffer;
 
@@ -22,10 +24,11 @@ struct WordAwaitable {
     void await_suspend(std::coroutine_handle<> /*handle*/) const {
     }
 
-    // Extract and return the next complete word, or nullopt if input ended.
+    // Extract and return the next complete word, or null opt if input ended.
     [[nodiscard]] std::optional<std::string> await_resume() const {
         return buffer.take_word();
     }
 };
+// NOLINTEND(readability-convert-member-functions-to-static)
 
 }

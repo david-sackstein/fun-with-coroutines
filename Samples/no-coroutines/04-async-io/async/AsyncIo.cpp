@@ -8,7 +8,7 @@
 
 namespace no_coroutines {
 
-[[nodiscard]] static bool should_retry(const ssize_t n);
+[[nodiscard]] static bool should_retry(ssize_t n);
 
 // Stop when a newline byte has been received or the buffer has no more room.
 ReadStopWhen stop_at_newline_or_full() {

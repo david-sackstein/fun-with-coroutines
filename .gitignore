@@ -21,6 +21,7 @@
 /cmake_install.cmake
 /CTestTestfile.cmake
 /Samples/build/
+/Samples/bin/
 /Samples/cmake-build-*/
 /Samples/CMakeFiles/
 /Samples/CMakeCache.txt
@@ -66,3 +67,6 @@ Thumbs.db
 # Office temp files
 # --------------------
 ~$*
+
+scripts/
+docs/

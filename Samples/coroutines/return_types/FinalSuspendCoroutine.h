@@ -1,5 +1,9 @@
 #pragma once
 
+// Used in Demo 04 - async I/O.
+// Appropriate because the coroutine must outlive its own co_return:
+// I/O callbacks hold a handle into the frame, so the owner must destroy it explicitly.
+
 #include <coroutine>
 #include <exception>
 
@@ -14,37 +18,34 @@ namespace coroutines {
 // The object is non-movable: the frame address must remain stable because I/O
 // callbacks hold a coroutine_handle pointing into it.
 //
-// Used in the async I/O demo: CalcServer and CalcClient each own one
-// FinalSuspendCoroutine that drives their entire async read/write sequence.
-//
 // promise_type hooks
-// initial_suspend   suspend_never   — runs immediately on construction, no explicit start needed
-// final_suspend     suspend_always  — keeps the frame alive for the owner to destroy
+// initial_suspend   suspend_never   - runs immediately on construction, no explicit start needed
+// final_suspend     suspend_always  - keeps the frame alive for the owner to destroy
 // return_void       yes
 // return_value      no
 // yield_value       no
 struct FinalSuspendCoroutine {
+    // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
     struct promise_type {
         FinalSuspendCoroutine get_return_object() {
             return FinalSuspendCoroutine{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        // NOLINTBEGIN(readability-convert-member-functions-to-static) -- coroutine promise_type
         std::suspend_never initial_suspend() {
             return {};
         }
+
         std::suspend_always final_suspend() noexcept {
             return {};
         }
 
-        void return_void() {
-        }
+        void return_void() {}
 
         void unhandled_exception() {
             std::terminate();
         }
-        // NOLINTEND(readability-convert-member-functions-to-static)
     };
+    // NOLINTEND(readability-convert-member-functions-to-static)
 
     explicit FinalSuspendCoroutine(std::coroutine_handle<promise_type> handle) : _handle(handle) {}
 

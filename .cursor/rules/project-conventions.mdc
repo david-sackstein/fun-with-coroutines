@@ -27,3 +27,58 @@ Only implement what is required to fulfill the request.
 ## Namespaces
 
 Never comment the closing brace of a namespace (write `}`, not `} // namespace foo`).
+
+## Comments
+
+A comment belongs to what follows it, not to what precedes it.
+Always put a blank line before a `//` comment when something comes before it (a declaration, a statement, a closing brace, etc.).
+
+```cpp
+// Bad: the comment looks like it describes foo(), not bar().
+void foo();
+// Describe bar.
+void bar();
+
+// Good: the blank line makes the association clear.
+void foo();
+
+// Describe bar.
+void bar();
+```
+
+The same rule applies inside function bodies: a step-comment that introduces the next statement must be separated from the previous statement by a blank line.
+
+## Multi-line parameter lists
+
+When a parameter list is too long to fit comfortably on one line, put the **first parameter on the next line** and indent all parameters one level from the declaration's margin. Parameters that naturally belong together (e.g. a pair of related `int` arguments) may share a line.
+
+```cpp
+// Bad — long list starts on the same line as the function name.
+void SolveQuiz(Reactor &reactor, int write_fd, int read_fd,
+               std::span<const std::string_view> questions);
+
+// Good — first arg drops to the next line; related pair shares a line.
+void SolveQuiz(
+    Reactor &reactor,
+    int write_fd, int read_fd,
+    std::span<const std::string_view> questions);
+```
+
+The same rule applies to **function calls**. Calls are often short enough to stay on one line; use multi-line only when it aids clarity.
+
+```cpp
+// Good — short call, one line.
+auto task = solve_quiz(reactor, write_fd, read_fd, questions);
+
+// Good — long call, first arg on next line.
+const auto quiz = std::make_shared<SolveQuiz>(
+    reactor,
+    pipe_client_to_server.write_fd(),
+    pipe_server_to_client.read_fd(),
+    quiz_questions);
+```
+
+## Test files
+
+1. **Header** — declares the fixture class: method signatures, field members, and any template helper methods (defined inline, since templates cannot be moved to `.cpp`).
+2. **Source** — `TEST_F` macros come first, followed by fixture method definitions below them.

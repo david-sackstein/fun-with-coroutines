@@ -28,9 +28,9 @@ list(FILTER SOURCES EXCLUDE REGEX "repl_main\\.cpp$")
 
 if(WIN32)
     list(FILTER SOURCES EXCLUDE REGEX
-        "common/reactor|common/pipe|common/async_io|04-async-io|05-aggregation")
+        "common/reactor|common/pipe|common/async_io|04-async-io|05-task-composition")
     list(FILTER TEST_SOURCES EXCLUDE REGEX
-        "04-async-io|05-aggregation")
+        "04-async-io|05-task-composition")
 endif()
 
 # CLion gutter / Google Test integration expects a dedicated *_test target linked with gtest.
@@ -65,7 +65,7 @@ target_link_libraries(fun_with_coroutines_test PRIVATE
 )
 
 if(NOT WIN32)
-    # Interactive calculator REPL — run this target to type expressions manually.
+    # Interactive calculator REPL - run this target to type expressions manually.
     add_executable(calc_repl
         coroutines/04-async-io/repl_main.cpp
         coroutines/04-async-io/run_async_io.cpp
