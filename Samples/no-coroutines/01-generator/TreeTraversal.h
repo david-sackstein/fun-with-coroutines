@@ -37,6 +37,7 @@ public:
         if (node->right != nullptr) {
             _stack.push_back(node->right);
         }
+
         if (node->left != nullptr) {
             _stack.push_back(node->left);
         }

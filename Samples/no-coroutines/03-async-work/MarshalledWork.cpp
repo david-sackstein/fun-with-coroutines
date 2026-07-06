@@ -31,7 +31,9 @@ void marshalled_work(
     EventLoop &loop,
     std::shared_ptr<EventLoop::Work> *keepalive,
     std::shared_ptr<std::vector<std::string>> thread_ids) {
-    const auto runner = std::make_shared<AsyncWorkMarshalled>(loop, [] { std::this_thread::sleep_for(testing_delay::async_task); });
+
+    const auto runner = std::make_shared<AsyncWorkMarshalled>(
+        loop, [] { std::this_thread::sleep_for(testing_delay::async_task); });
 
     // Record thread ID on the calling thread before the first async step.
     thread_ids->push_back(io::format_thread_id());
